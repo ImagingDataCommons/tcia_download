@@ -45,7 +45,8 @@ import re
 
                
 def copy_series(study, series, idc_bucket_name, chc_bucket_name, storage_client, validate):
-#     print('copy_series: idc_bucket_name: {}, chc_bucket_name: {}'.format(idc_bucket_name, chc_bucket_name))
+#    print('copy_series: study: {}, series: {}'.format(study, series))
+#    print('copy_series: idc_bucket_name: {}, chc_bucket_name: {}'.format(idc_bucket_name, chc_bucket_name))
 
     validated = 0
     compressed = 0
@@ -53,7 +54,6 @@ def copy_series(study, series, idc_bucket_name, chc_bucket_name, storage_client,
     os.mkdir("/dicom/{}/{}".format(study,series))
     TCIA_API_request_to_file("/dicom/{}/{}.zip".format(study,series), 
                              "getImage", parameters="SeriesInstanceUID={}".format(series))
-#    breakpoint()
     compressed += os.path.getsize("/dicom/{}/{}.zip".format(study,series))
 
     with zipfile.ZipFile("/dicom/{}/{}.zip".format(study,series)) as zip_ref:
@@ -107,14 +107,19 @@ def worker(input, output, project, validate):
         result = copy_series(*args, storage_client, validate)
         output.put(result)
 
-def copy_collection(tcia_name, processes, storage_client, project):
+
+        
+def copy_collection(tcia_name, num_processes, storage_client, project):
+
+    processes = []
     collection_name = tcia_name.replace(' ','_')
     idc_bucket_name = 'idc-tcia-{}'.format(collection_name.lower().replace('_','-'))
     chc_bucket_name = idc_bucket_name.replace('idc', 'gcs-public-data--healthcare')
-#     print('copy_collection: idc_bucket_name: {}, chc_bucket_name: {}'.format(idc_bucket_name, chc_bucket_name))
-    
+
     # Collect statistics on each series
     series_statistics = [] 
+    compressed = 0
+    uncompressed = 0
     
     # Determine if the Google TCIA archive has this collection. If so, validate 
     # against it.
@@ -135,44 +140,83 @@ def copy_collection(tcia_name, processes, storage_client, project):
     # List of series enqueued
     enqueued_series = []
 
-    # Start worker processes
-    for i in range(processes):
-        Process(target=worker, args=(task_queue, done_queue, project, validate)).start()
+    try:
+        # Get a list of the studies in the collection
+        studies = TCIA_API_request('getPatientStudy','Collection={}'.format(collection_name))
+        print('{} studies'.format(len(studies)))
+    except:
+        print('Error getting studies list',file=sys.stderr)
+        raise RuntimeError ("Failed to get series list")
 
-    # Create the bucket for this collection
-    if not idc_bucket_name in [b.name for b in storage_client.list_buckets()]:
-        bucket = storage_client.create_bucket(idc_bucket_name)
-
-    # Get a list of the studies in the collection
-    studies = TCIA_API_request('getPatientStudy','Collection={}'.format(collection_name))
-    print('{} studies'.format(len(studies)))
+    # Make a directory for each study so that we don't have to test for existence later
     for study in studies:
         os.mkdir('/dicom/{}'.format(study['StudyInstanceUID']))
-    # Get a list of the series in the collection
-    seriess = TCIA_API_request('getSeries','Collection={}'.format(collection_name))
-    sorted_seriess = sorted(seriess, key = lambda i: i['ImageCount'],reverse=True)
-    print('{} series'.format(len(seriess)))
-    for series in sorted_seriess:
-        task_queue.put((series['StudyInstanceUID'],series['SeriesInstanceUID'], idc_bucket_name, chc_bucket_name))
-        enqueued_series.append(series['SeriesInstanceUID'])
-    
-    compressed = 0
-    uncompressed = 0
+        
     try:
-        while not enqueued_series == []:
-#             results = done_queue.get(timeout=10*60)
-            results = done_queue.get()
-            enqueued_series.remove(results['series'])
+        # Get a list of the series in the collection
+        seriess = TCIA_API_request('getSeries','Collection={}'.format(collection_name))
+        sorted_seriess = sorted(seriess, key = lambda i: i['ImageCount'],reverse=True)
+        print('{} series'.format(len(seriess)))
+    except:
+        print('Error getting studies list',file=sys.stderr)
+        raise RuntimeError ("Failed to get studies list")
+
+
+    if num_processes==1:
+        pass
+        for series in sorted_seriess:
+            results = copy_series(series['StudyInstanceUID'],series['SeriesInstanceUID'], idc_bucket_name, chc_bucket_name,
+                storage.Client(project=project), validate)
             compressed += results['compressed']
             uncompressed += results['uncompressed']
             series_statistics.append(results)
-    except Empty as e:
-        print("Timeout in collection {}".format(tcia_name))
-        compressed = -1
-        uncompressed = -1
-    finally:
-        # Tell child processes to stop
-        for i in range(processes):
-            task_queue.put('STOP')
+    else:
+        # Start worker processes
+        for process in range(num_processes):
+            processes.append(
+                Process(target=worker, args=(task_queue, done_queue, project, validate)))
+            processes[-1].start()
+
+        # Queue the series to be processed by worker processors
+        for series in sorted_seriess:
+            task_queue.put((series['StudyInstanceUID'],series['SeriesInstanceUID'], idc_bucket_name, chc_bucket_name))
+            enqueued_series.append(series['SeriesInstanceUID']) 
+        
+        try:
+            while not enqueued_series == []:
+                # Get results of each series. Timeout if waiting too long
+                results = done_queue.get(10*60)
+                enqueued_series.remove(results['series'])
+                compressed += results['compressed']
+                series_statistics.append(results)
+            '''
+            for series in sorted_seriess:
+                # Get results of each series. Timeout if waiting too long
+                results = done_queue.get(10*60)
+                compressed += results['compressed']
+                uncompressed += results['uncompressed']
+                series_statistics.append(results)
+            '''
+            print("Got results for all series",file=sys.stdout)
+
+            # Tell child processes to stop
+            for process in processes:
+                task_queue.put('STOP')
+
+            # Should not need to do this
+#            for process in processes:
+#                p.terminate()
+#                p.join()
                 
+        except queue.Empty as e:
+            print("Timeout in collection {}".format(tcia_name))
+            compressed = -1
+            uncompressed = -1
+            for process in processes:
+                p.terminate()
+                p.join()
+                return(compressed, uncompressed, [])
+
     return(compressed, uncompressed, series_statistics)
+
+                        

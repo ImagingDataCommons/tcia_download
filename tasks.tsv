@@ -1,0 +1,101 @@
+--env TCIA_NAME	--output SERIES_STATISTICS	--output OUTPUT_FILE
+TCGA-READ	gs://idc-dsub-logs/output/tcga-read/series_statistics.log	gs://idc-dsub-logs/output/tcga-read/stdout.log
+GBM-DSC-MRI-DRO	gs://idc-dsub-logs/output/gbm-dsc-mri-dro/series_statistics.log	gs://idc-dsub-logs/output/gbm-dsc-mri-dro/stdout.log
+Prostate-3T	gs://idc-dsub-logs/output/prostate-3t/series_statistics.log	gs://idc-dsub-logs/output/prostate-3t/stdout.log
+TCGA-THCA	gs://idc-dsub-logs/output/tcga-thca/series_statistics.log	gs://idc-dsub-logs/output/tcga-thca/stdout.log
+MRI-DIR	gs://idc-dsub-logs/output/mri-dir/series_statistics.log	gs://idc-dsub-logs/output/mri-dir/stdout.log
+NSCLC-RADIOMICS-INTEROBSERVER1	gs://idc-dsub-logs/output/nsclc-radiomics-interobserver1/series_statistics.log	gs://idc-dsub-logs/output/nsclc-radiomics-interobserver1/stdout.log
+LungCT-Diagnosis	gs://idc-dsub-logs/output/lungct-diagnosis/series_statistics.log	gs://idc-dsub-logs/output/lungct-diagnosis/stdout.log
+APOLLO	gs://idc-dsub-logs/output/apollo/series_statistics.log	gs://idc-dsub-logs/output/apollo/stdout.log
+AAPM-RT-MAC	gs://idc-dsub-logs/output/aapm-rt-mac/series_statistics.log	gs://idc-dsub-logs/output/aapm-rt-mac/stdout.log
+RIDER PHANTOM MRI	gs://idc-dsub-logs/output/rider-phantom-mri/series_statistics.log	gs://idc-dsub-logs/output/rider-phantom-mri/stdout.log
+TCGA-COAD	gs://idc-dsub-logs/output/tcga-coad/series_statistics.log	gs://idc-dsub-logs/output/tcga-coad/stdout.log
+Brain-Tumor-Progression	gs://idc-dsub-logs/output/brain-tumor-progression/series_statistics.log	gs://idc-dsub-logs/output/brain-tumor-progression/stdout.log
+TCGA-KICH	gs://idc-dsub-logs/output/tcga-kich/series_statistics.log	gs://idc-dsub-logs/output/tcga-kich/stdout.log
+LCTSC	gs://idc-dsub-logs/output/lctsc/series_statistics.log	gs://idc-dsub-logs/output/lctsc/stdout.log
+DRO-Toolkit	gs://idc-dsub-logs/output/dro-toolkit/series_statistics.log	gs://idc-dsub-logs/output/dro-toolkit/stdout.log
+CBIS-DDSM	gs://idc-dsub-logs/output/cbis-ddsm/series_statistics.log	gs://idc-dsub-logs/output/cbis-ddsm/stdout.log
+QIN LUNG CT	gs://idc-dsub-logs/output/qin-lung-ct/series_statistics.log	gs://idc-dsub-logs/output/qin-lung-ct/stdout.log
+NSCLC-Radiomics-Genomics	gs://idc-dsub-logs/output/nsclc-radiomics-genomics/series_statistics.log	gs://idc-dsub-logs/output/nsclc-radiomics-genomics/stdout.log
+Pelvic-Reference-Data	gs://idc-dsub-logs/output/pelvic-reference-data/series_statistics.log	gs://idc-dsub-logs/output/pelvic-reference-data/stdout.log
+RIDER Lung CT	gs://idc-dsub-logs/output/rider-lung-ct/series_statistics.log	gs://idc-dsub-logs/output/rider-lung-ct/stdout.log
+TCGA-PRAD	gs://idc-dsub-logs/output/tcga-prad/series_statistics.log	gs://idc-dsub-logs/output/tcga-prad/stdout.log
+LGG-1p19qDeletion	gs://idc-dsub-logs/output/lgg-1p19qdeletion/series_statistics.log	gs://idc-dsub-logs/output/lgg-1p19qdeletion/stdout.log
+HNSCC-3DCT-RT	gs://idc-dsub-logs/output/hnscc-3dct-rt/series_statistics.log	gs://idc-dsub-logs/output/hnscc-3dct-rt/stdout.log
+TCGA-CESC	gs://idc-dsub-logs/output/tcga-cesc/series_statistics.log	gs://idc-dsub-logs/output/tcga-cesc/stdout.log
+Pancreas-CT	gs://idc-dsub-logs/output/pancreas-ct/series_statistics.log	gs://idc-dsub-logs/output/pancreas-ct/stdout.log
+TCGA-ESCA	gs://idc-dsub-logs/output/tcga-esca/series_statistics.log	gs://idc-dsub-logs/output/tcga-esca/stdout.log
+PROSTATE-MRI	gs://idc-dsub-logs/output/prostate-mri/series_statistics.log	gs://idc-dsub-logs/output/prostate-mri/stdout.log
+SPIE-AAPM Lung CT Challenge	gs://idc-dsub-logs/output/spie-aapm-lung-ct-challenge/series_statistics.log	gs://idc-dsub-logs/output/spie-aapm-lung-ct-challenge/stdout.log
+CPTAC-CM	gs://idc-dsub-logs/output/cptac-cm/series_statistics.log	gs://idc-dsub-logs/output/cptac-cm/stdout.log
+Mouse-Mammary	gs://idc-dsub-logs/output/mouse-mammary/series_statistics.log	gs://idc-dsub-logs/output/mouse-mammary/stdout.log
+CC-Radiomics-Phantom-3	gs://idc-dsub-logs/output/cc-radiomics-phantom-3/series_statistics.log	gs://idc-dsub-logs/output/cc-radiomics-phantom-3/stdout.log
+TCGA-KIRP	gs://idc-dsub-logs/output/tcga-kirp/series_statistics.log	gs://idc-dsub-logs/output/tcga-kirp/stdout.log
+HEAD-NECK-RADIOMICS-HN1	gs://idc-dsub-logs/output/head-neck-radiomics-hn1/series_statistics.log	gs://idc-dsub-logs/output/head-neck-radiomics-hn1/stdout.log
+CPTAC-SAR	gs://idc-dsub-logs/output/cptac-sar/series_statistics.log	gs://idc-dsub-logs/output/cptac-sar/stdout.log
+Prostate Fused-MRI-Pathology	gs://idc-dsub-logs/output/prostate-fused-mri-pathology/series_statistics.log	gs://idc-dsub-logs/output/prostate-fused-mri-pathology/stdout.log
+PROSTATE-DIAGNOSIS	gs://idc-dsub-logs/output/prostate-diagnosis/series_statistics.log	gs://idc-dsub-logs/output/prostate-diagnosis/stdout.log
+CPTAC-LSCC	gs://idc-dsub-logs/output/cptac-lscc/series_statistics.log	gs://idc-dsub-logs/output/cptac-lscc/stdout.log
+TCGA-LUSC	gs://idc-dsub-logs/output/tcga-lusc/series_statistics.log	gs://idc-dsub-logs/output/tcga-lusc/stdout.log
+Mouse-Astrocytoma	gs://idc-dsub-logs/output/mouse-astrocytoma/series_statistics.log	gs://idc-dsub-logs/output/mouse-astrocytoma/stdout.log
+Soft-tissue-Sarcoma	gs://idc-dsub-logs/output/soft-tissue-sarcoma/series_statistics.log	gs://idc-dsub-logs/output/soft-tissue-sarcoma/stdout.log
+CPTAC-LUAD	gs://idc-dsub-logs/output/cptac-luad/series_statistics.log	gs://idc-dsub-logs/output/cptac-luad/stdout.log
+TCGA-STAD	gs://idc-dsub-logs/output/tcga-stad/series_statistics.log	gs://idc-dsub-logs/output/tcga-stad/stdout.log
+TCGA-LUAD	gs://idc-dsub-logs/output/tcga-luad/series_statistics.log	gs://idc-dsub-logs/output/tcga-luad/stdout.log
+NSCLC-Radiomics	gs://idc-dsub-logs/output/nsclc-radiomics/series_statistics.log	gs://idc-dsub-logs/output/nsclc-radiomics/stdout.log
+TCGA-OV	gs://idc-dsub-logs/output/tcga-ov/series_statistics.log	gs://idc-dsub-logs/output/tcga-ov/stdout.log
+CC-Radiomics-Phantom-2	gs://idc-dsub-logs/output/cc-radiomics-phantom-2/series_statistics.log	gs://idc-dsub-logs/output/cc-radiomics-phantom-2/stdout.log
+NaF PROSTATE	gs://idc-dsub-logs/output/naf-prostate/series_statistics.log	gs://idc-dsub-logs/output/naf-prostate/stdout.log
+RIDER NEURO MRI	gs://idc-dsub-logs/output/rider-neuro-mri/series_statistics.log	gs://idc-dsub-logs/output/rider-neuro-mri/stdout.log
+C4KC-KiTS	gs://idc-dsub-logs/output/c4kc-kits/series_statistics.log	gs://idc-dsub-logs/output/c4kc-kits/stdout.log
+CPTAC-PDA	gs://idc-dsub-logs/output/cptac-pda/series_statistics.log	gs://idc-dsub-logs/output/cptac-pda/stdout.log
+TCGA-UCEC	gs://idc-dsub-logs/output/tcga-ucec/series_statistics.log	gs://idc-dsub-logs/output/tcga-ucec/stdout.log
+CPTAC-HNSCC	gs://idc-dsub-logs/output/cptac-hnscc/series_statistics.log	gs://idc-dsub-logs/output/cptac-hnscc/stdout.log
+CPTAC-CCRCC	gs://idc-dsub-logs/output/cptac-ccrcc/series_statistics.log	gs://idc-dsub-logs/output/cptac-ccrcc/stdout.log
+Breast-MRI-NACT-Pilot	gs://idc-dsub-logs/output/breast-mri-nact-pilot/series_statistics.log	gs://idc-dsub-logs/output/breast-mri-nact-pilot/stdout.log
+QIN-BREAST	gs://idc-dsub-logs/output/qin-breast/series_statistics.log	gs://idc-dsub-logs/output/qin-breast/stdout.log
+BREAST-DIAGNOSIS	gs://idc-dsub-logs/output/breast-diagnosis/series_statistics.log	gs://idc-dsub-logs/output/breast-diagnosis/stdout.log
+OPC-Radiomics	gs://idc-dsub-logs/output/opc-radiomics/series_statistics.log	gs://idc-dsub-logs/output/opc-radiomics/stdout.log
+CT Lymph Nodes	gs://idc-dsub-logs/output/ct-lymph-nodes/series_statistics.log	gs://idc-dsub-logs/output/ct-lymph-nodes/stdout.log
+REMBRANDT	gs://idc-dsub-logs/output/rembrandt/series_statistics.log	gs://idc-dsub-logs/output/rembrandt/stdout.log
+TCGA-BLCA	gs://idc-dsub-logs/output/tcga-blca/series_statistics.log	gs://idc-dsub-logs/output/tcga-blca/stdout.log
+QIN-BRAIN-DSC-MRI	gs://idc-dsub-logs/output/qin-brain-dsc-mri/series_statistics.log	gs://idc-dsub-logs/output/qin-brain-dsc-mri/stdout.log
+Head-Neck-PET-CT	gs://idc-dsub-logs/output/head-neck-pet-ct/series_statistics.log	gs://idc-dsub-logs/output/head-neck-pet-ct/stdout.log
+TCGA-LIHC	gs://idc-dsub-logs/output/tcga-lihc/series_statistics.log	gs://idc-dsub-logs/output/tcga-lihc/stdout.log
+Anti-PD-1_Lung	gs://idc-dsub-logs/output/anti-pd-1-lung/series_statistics.log	gs://idc-dsub-logs/output/anti-pd-1-lung/stdout.log
+CPTAC-UCEC	gs://idc-dsub-logs/output/cptac-ucec/series_statistics.log	gs://idc-dsub-logs/output/cptac-ucec/stdout.log
+CPTAC-GBM	gs://idc-dsub-logs/output/cptac-gbm/series_statistics.log	gs://idc-dsub-logs/output/cptac-gbm/stdout.log
+TCGA-KIRC	gs://idc-dsub-logs/output/tcga-kirc/series_statistics.log	gs://idc-dsub-logs/output/tcga-kirc/stdout.log
+Head-Neck Cetuximab	gs://idc-dsub-logs/output/head-neck-cetuximab/series_statistics.log	gs://idc-dsub-logs/output/head-neck-cetuximab/stdout.log
+VICTRE	gs://idc-dsub-logs/output/victre/series_statistics.log	gs://idc-dsub-logs/output/victre/stdout.log
+QIN Breast DCE-MRI	gs://idc-dsub-logs/output/qin-breast-dce-mri/series_statistics.log	gs://idc-dsub-logs/output/qin-breast-dce-mri/stdout.log
+TCGA-BRCA	gs://idc-dsub-logs/output/tcga-brca/series_statistics.log	gs://idc-dsub-logs/output/tcga-brca/stdout.log
+Anti-PD-1_MELANOMA	gs://idc-dsub-logs/output/anti-pd-1-melanoma/series_statistics.log	gs://idc-dsub-logs/output/anti-pd-1-melanoma/stdout.log
+TCGA-LGG	gs://idc-dsub-logs/output/tcga-lgg/series_statistics.log	gs://idc-dsub-logs/output/tcga-lgg/stdout.log
+LIDC-IDRI	gs://idc-dsub-logs/output/lidc-idri/series_statistics.log	gs://idc-dsub-logs/output/lidc-idri/stdout.log
+RIDER Lung PET-CT	gs://idc-dsub-logs/output/rider-lung-pet-ct/series_statistics.log	gs://idc-dsub-logs/output/rider-lung-pet-ct/stdout.log
+TCGA-HNSC	gs://idc-dsub-logs/output/tcga-hnsc/series_statistics.log	gs://idc-dsub-logs/output/tcga-hnsc/stdout.log
+NSCLC Radiogenomics	gs://idc-dsub-logs/output/nsclc-radiogenomics/series_statistics.log	gs://idc-dsub-logs/output/nsclc-radiogenomics/stdout.log
+PROSTATEx	gs://idc-dsub-logs/output/prostatex/series_statistics.log	gs://idc-dsub-logs/output/prostatex/stdout.log
+4D-Lung	gs://idc-dsub-logs/output/4d-lung/series_statistics.log	gs://idc-dsub-logs/output/4d-lung/stdout.log
+QIN-HEADNECK	gs://idc-dsub-logs/output/qin-headneck/series_statistics.log	gs://idc-dsub-logs/output/qin-headneck/stdout.log
+ISPY1	gs://idc-dsub-logs/output/ispy1/series_statistics.log	gs://idc-dsub-logs/output/ispy1/stdout.log
+TCGA-GBM	gs://idc-dsub-logs/output/tcga-gbm/series_statistics.log	gs://idc-dsub-logs/output/tcga-gbm/stdout.log
+ACRIN-NSCLC-FDG-PET	gs://idc-dsub-logs/output/acrin-nsclc-fdg-pet/series_statistics.log	gs://idc-dsub-logs/output/acrin-nsclc-fdg-pet/stdout.log
+HNSCC	gs://idc-dsub-logs/output/hnscc/series_statistics.log	gs://idc-dsub-logs/output/hnscc/stdout.log
+QIN GBM Treatment Response	gs://idc-dsub-logs/output/qin-gbm-treatment-response/series_statistics.log	gs://idc-dsub-logs/output/qin-gbm-treatment-response/stdout.log
+ACRIN-FMISO-Brain	gs://idc-dsub-logs/output/acrin-fmiso-brain/series_statistics.log	gs://idc-dsub-logs/output/acrin-fmiso-brain/stdout.log
+ACRIN-FLT-Breast	gs://idc-dsub-logs/output/acrin-flt-breast/series_statistics.log	gs://idc-dsub-logs/output/acrin-flt-breast/stdout.log
+IvyGAP	gs://idc-dsub-logs/output/ivygap/series_statistics.log	gs://idc-dsub-logs/output/ivygap/stdout.log
+CT COLONOGRAPHY	gs://idc-dsub-logs/output/ct-colonography/series_statistics.log	gs://idc-dsub-logs/output/ct-colonography/stdout.log
+Phantom FDA	gs://idc-dsub-logs/output/phantom-fda/series_statistics.log	gs://idc-dsub-logs/output/phantom-fda/stdout.log
+LDCT-and-Projection-data	gs://idc-dsub-logs/output/ldct-and-projection-data/series_statistics.log	gs://idc-dsub-logs/output/ldct-and-projection-data/stdout.log
+#Lung Phantom	gs://idc-dsub-logs/output/lung-phantom/series_statistics.log	gs://idc-dsub-logs/output/lung-phantom/stdout.log
+#RIDER PHANTOM PET-CT	gs://idc-dsub-logs/output/rider-phantom-pet-ct/series_statistics.log	gs://idc-dsub-logs/output/rider-phantom-pet-ct/stdout.log
+#RIDER Breast MRI	gs://idc-dsub-logs/output/rider-breast-mri/series_statistics.log	gs://idc-dsub-logs/output/rider-breast-mri/stdout.log
+#CC-Radiomics-Phantom	gs://idc-dsub-logs/output/cc-radiomics-phantom/series_statistics.log	gs://idc-dsub-logs/output/cc-radiomics-phantom/stdout.log
+#QIN PET Phantom	gs://idc-dsub-logs/output/qin-pet-phantom/series_statistics.log	gs://idc-dsub-logs/output/qin-pet-phantom/stdout.log
+#TCGA-SARC	gs://idc-dsub-logs/output/tcga-sarc/series_statistics.log	gs://idc-dsub-logs/output/tcga-sarc/stdout.log
+#Lung-Fused-CT-Pathology	gs://idc-dsub-logs/output/lung-fused-ct-pathology/series_statistics.log	gs://idc-dsub-logs/output/lung-fused-ct-pathology/stdout.log
+#PDMR-BL0293-F563	gs://idc-dsub-logs/output/pdmr-bl0293-f563/series_statistics.log	gs://idc-dsub-logs/output/pdmr-bl0293-f563/stdout.log
+#QIBA CT-1C	gs://idc-dsub-logs/output/qiba-ct-1c/series_statistics.log	gs://idc-dsub-logs/output/qiba-ct-1c/stdout.log

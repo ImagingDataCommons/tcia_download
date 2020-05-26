@@ -1,10 +1,11 @@
 #!/bin/bash
 dsub \
     --provider google-v2 \
-    --project idc-dev-etl \
     --regions us-central1 \
-    --logging gs://idc-dsub-logs \
+    --project idc-dev-etl \
+    --logging gs://idc-dsub-app-logs \
     --image gcr.io/idc-dev-etl/tcia_cloner \
     --mount CLONE_TCIA=gs://idc-dsub-clone-tcia \
-    --task ./tasks.tsv 2- \
-    --command 'python "${CLONE_TCIA}"/clone_collection.py -c "${NAME}" > "${OUTPUT_FILE}"'
+    --task ./tasks.tsv 16 \
+    --command 'python "${CLONE_TCIA}"/clone_collection.py -c "${TCIA_NAME}" -p 4 > "${OUTPUT_FILE}"' \
+    --wait

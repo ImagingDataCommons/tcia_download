@@ -1,4 +1,0 @@
---env NAME	--output SERIES_STATISTICS	--output OUTPUT_FILE
-TCGA-READ	gs://idc-dsub-logs/output/tcga-read/series_statistics.log	gs://idc-dsub-logs/output/tcga-read/stdout.log
-PDMR-BL0293-F563	gs://idc-dsub-logs/output/pdmr-bl0293-f563/series_statistics.log	gs://idc-dsub-logs/output/pdmr-bl0293-f563/stdout.log
-RIDER PHANTOM PET-CT	gs://idc-dsub-logs/output/rider-phantom-pet-ct/series_statistics.log	gs://idc-dsub-logs/output/rider-phantom-pet-ct/stdout.log

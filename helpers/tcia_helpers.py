@@ -6,23 +6,41 @@ import os
 import shutil
 import pydicom
 import time
+import random
 from io import BytesIO, StringIO
 
 from google.cloud import bigquery,storage
 from google.cloud.exceptions import NotFound
 from google.api_core.exceptions import BadRequest
 
+MAX_RETRIES=10
+
 def TCIA_API_request(endpoint, parameters=""):
+    
+    retry = 0
     buffer = BytesIO()
     c = pycurl.Curl()
     url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
-    c.setopt(c.URL, url)
-    c.setopt(c.WRITEDATA,buffer)
-    c.perform()
+    while retry < MAX_RETRIES:
+        try:
+            c.setopt(c.URL, url)
+            c.setopt(c.WRITEDATA,buffer)
+            c.perform()
+            data = buffer.getvalue().decode('iso-8859-1')
+#            print('Raw TCIA data: {}'.format(data),file=sys.stderr)
+            results = json.loads(data)
+            c.close()
+            return results
+        except:
+            rand = random.randint(1,10)
+            print("Retrying in TCIA_API_request from {}".format(inspect.stack()[1]),file=sys.stderr)
+            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr)
+            time.sleep(rand)
+            retry += 1
+            
     c.close()
-    results = json.loads(buffer.getvalue().decode('iso-8859-1'))
-    return results
-
+    print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr)
+    raise RuntimeError (inspect.stack()[0:2])
 
 
 def get_TCIA_collections():
