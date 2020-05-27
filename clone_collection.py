@@ -15,6 +15,8 @@ VALIDATED=1
 NO_VALIDATION=0
 UNEQUAL_INSTANCE_COUNT=-1
 CRC32C_MISMATCH=-2
+INVALID_ZIP=-3
+SERIES_CONTENT_DIFFERS=-4
 
 def main(args):
     TCIA_NAME = args.collection
@@ -29,8 +31,9 @@ def main(args):
 
     bucket = storage_client.bucket(idc_bucket_name)
     if bucket.exists():
+        pass
 #        subprocess.run(['gsutil', '-m', '-q', 'rm', '-r', 'gs://{}'.format(idc_bucket_name)])
-        bucket.delete_blobs(bucket.list_blobs())
+#        bucket.delete_blobs(bucket.list_blobs())
     else:
         bucket.create()
     
@@ -42,7 +45,7 @@ def main(args):
     print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed, 
         uncompressed, float(compressed)/float(uncompressed) if float(uncompressed) > 0.0 else 1.0, file=sys.stdout))
     print("Elapsed time (s):{:.3}, Bandwidth (B/s): {:.3}".format(elapsed, compressed/elapsed), file=sys.stdout)  
-    validated = no_validation = unequal_counts = crc32_mismatch = 0
+    validated = no_validation = unequal_counts = crc32_mismatch = invalid_zip = series_content_differs = 0
     for val in series_statistics:
         if val['validation'] == VALIDATED:
             validated +=1
@@ -52,10 +55,14 @@ def main(args):
             unequal_counts += 1
         elif val['validation'] == CRC32C_MISMATCH:
             crc32_mismatch +=1
+        elif val['validation'] == INVALID_ZIP:
+            invalid_zip +=1
+        elif val['validation'] == SERIES_CONTENT_DIFFERS:
+            series_content_differs +=1
         else:
             print("Unknown validation result for {}/{}".format(val['study'],val['series']))
-    print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}'.format(
-            validated, no_validation, unequal_counts, crc32_mismatch), file=sys.stdout)
+    print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}, invalid zip: {}, series content differs: {}'.format(
+            validated, no_validation, unequal_counts, crc32_mismatch, invalid_zip, series_content_differs), file=sys.stdout)
 
     with open(os.environ['SERIES_STATISTICS'],'w') as f:
         print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed, 

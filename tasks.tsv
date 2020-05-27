@@ -1,4 +1,13 @@
 --env TCIA_NAME	--output SERIES_STATISTICS	--output OUTPUT_FILE
+RIDER PHANTOM PET-CT	gs://idc-dsub-logs/output/rider-phantom-pet-ct/series_statistics.log	gs://idc-dsub-logs/output/rider-phantom-pet-ct/stdout.log
+RIDER Breast MRI	gs://idc-dsub-logs/output/rider-breast-mri/series_statistics.log	gs://idc-dsub-logs/output/rider-breast-mri/stdout.log
+CC-Radiomics-Phantom	gs://idc-dsub-logs/output/cc-radiomics-phantom/series_statistics.log	gs://idc-dsub-logs/output/cc-radiomics-phantom/stdout.log
+QIN PET Phantom	gs://idc-dsub-logs/output/qin-pet-phantom/series_statistics.log	gs://idc-dsub-logs/output/qin-pet-phantom/stdout.log
+TCGA-SARC	gs://idc-dsub-logs/output/tcga-sarc/series_statistics.log	gs://idc-dsub-logs/output/tcga-sarc/stdout.log
+Lung-Fused-CT-Pathology	gs://idc-dsub-logs/output/lung-fused-ct-pathology/series_statistics.log	gs://idc-dsub-logs/output/lung-fused-ct-pathology/stdout.log
+PDMR-BL0293-F563	gs://idc-dsub-logs/output/pdmr-bl0293-f563/series_statistics.log	gs://idc-dsub-logs/output/pdmr-bl0293-f563/stdout.log
+QIBA CT-1C	gs://idc-dsub-logs/output/qiba-ct-1c/series_statistics.log	gs://idc-dsub-logs/output/qiba-ct-1c/stdout.log
+Lung Phantom	gs://idc-dsub-logs/output/lung-phantom/series_statistics.log	gs://idc-dsub-logs/output/lung-phantom/stdout.log
 TCGA-READ	gs://idc-dsub-logs/output/tcga-read/series_statistics.log	gs://idc-dsub-logs/output/tcga-read/stdout.log
 GBM-DSC-MRI-DRO	gs://idc-dsub-logs/output/gbm-dsc-mri-dro/series_statistics.log	gs://idc-dsub-logs/output/gbm-dsc-mri-dro/stdout.log
 Prostate-3T	gs://idc-dsub-logs/output/prostate-3t/series_statistics.log	gs://idc-dsub-logs/output/prostate-3t/stdout.log
@@ -90,12 +99,3 @@ IvyGAP	gs://idc-dsub-logs/output/ivygap/series_statistics.log	gs://idc-dsub-logs
 CT COLONOGRAPHY	gs://idc-dsub-logs/output/ct-colonography/series_statistics.log	gs://idc-dsub-logs/output/ct-colonography/stdout.log
 Phantom FDA	gs://idc-dsub-logs/output/phantom-fda/series_statistics.log	gs://idc-dsub-logs/output/phantom-fda/stdout.log
 LDCT-and-Projection-data	gs://idc-dsub-logs/output/ldct-and-projection-data/series_statistics.log	gs://idc-dsub-logs/output/ldct-and-projection-data/stdout.log
-#Lung Phantom	gs://idc-dsub-logs/output/lung-phantom/series_statistics.log	gs://idc-dsub-logs/output/lung-phantom/stdout.log
-#RIDER PHANTOM PET-CT	gs://idc-dsub-logs/output/rider-phantom-pet-ct/series_statistics.log	gs://idc-dsub-logs/output/rider-phantom-pet-ct/stdout.log
-#RIDER Breast MRI	gs://idc-dsub-logs/output/rider-breast-mri/series_statistics.log	gs://idc-dsub-logs/output/rider-breast-mri/stdout.log
-#CC-Radiomics-Phantom	gs://idc-dsub-logs/output/cc-radiomics-phantom/series_statistics.log	gs://idc-dsub-logs/output/cc-radiomics-phantom/stdout.log
-#QIN PET Phantom	gs://idc-dsub-logs/output/qin-pet-phantom/series_statistics.log	gs://idc-dsub-logs/output/qin-pet-phantom/stdout.log
-#TCGA-SARC	gs://idc-dsub-logs/output/tcga-sarc/series_statistics.log	gs://idc-dsub-logs/output/tcga-sarc/stdout.log
-#Lung-Fused-CT-Pathology	gs://idc-dsub-logs/output/lung-fused-ct-pathology/series_statistics.log	gs://idc-dsub-logs/output/lung-fused-ct-pathology/stdout.log
-#PDMR-BL0293-F563	gs://idc-dsub-logs/output/pdmr-bl0293-f563/series_statistics.log	gs://idc-dsub-logs/output/pdmr-bl0293-f563/stdout.log
-#QIBA CT-1C	gs://idc-dsub-logs/output/qiba-ct-1c/series_statistics.log	gs://idc-dsub-logs/output/qiba-ct-1c/stdout.log
