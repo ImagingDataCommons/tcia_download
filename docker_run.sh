@@ -1,6 +1,6 @@
 #!/bin/bash
-COLLECTION=TCGA-THCA
-BUCKET_NAME=tcga-thca
+COLLECTION=TCGA-SARC
+BUCKET_NAME=tcga-sarc
 docker run \
        -v $HOME/tcia_download:/root/tcia_download \
        --env GOOGLE_APPLICATION_CREDENTIALS=/root/tcia_download/application_default_config.json \

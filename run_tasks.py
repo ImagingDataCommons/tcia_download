@@ -6,11 +6,14 @@ from os.path import join
 import os
 import argparse
 import shlex
+import time
 
 def run_dsub(tcia_name, dsub_string):
 #    stream = os.popen(dsub_string)
 #    output = stream.read()
+    # shlex splits the command line correctly, so that subprocess.run will take it
     args = shlex.split(dsub_string)
+    print("Starting {} at {}".format(dsub_string,time.asctime()))
     results = subprocess.run(args, stdout=PIPE, stderr=PIPE)
     return(tcia_name,results)
 
@@ -60,7 +63,7 @@ def main(procs, first_task, total_tasks, task_file):
             '--logging', 'gs://idc-dsub-app-logs',
             '--image', 'gcr.io/idc-dev-etl/tcia_cloner',
             '--mount', 'CLONE_TCIA={}'.format('gs://idc-dsub-clone-tcia'),
-            '--env', 'TCIA_NAME={}'.format(tasks[task].split('\t')[0]),
+            '--env', 'TCIA_NAME="{}"'.format(tasks[task].split('\t')[0]),
             '--output', 'SERIES_STATISTICS={}'.format(tasks[task].split('\t')[1]),
             '--output', 'OUTPUT_FILE={}'.format(tasks[task].split('\t')[2]),
             '--command',"'" + 'python '+'"${CLONE_TCIA}"'+'/clone_collection.py -c '+'"${TCIA_NAME}"'+' -p 4 > '+'"${OUTPUT_FILE}"' + "'",
@@ -72,7 +75,8 @@ def main(procs, first_task, total_tasks, task_file):
  #       print(dsub_string)
  #       print(shlex.split(dsub_string))
 
-        # Enqueue the dsub command        
+        # Enqueue the dsub command   
+        print("Enqueuing {}\n".format(dsub_string))   
         task_queue.put((tasks[task].split('\t')[0], dsub_string))
         task += 1
 
@@ -81,7 +85,7 @@ def main(procs, first_task, total_tasks, task_file):
         while total_tasks > 0:
             results = done_queue.get()
             print("Completed {}, results:".format(results[0]))
-            print(str(results[1].stderr))
+            print("{}\n".format(str(results[1].stderr)))
             total_tasks -= 1
         # Tell child processes stop
         for process in processes:

@@ -167,7 +167,7 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
     try:
         # Get a list of the studies in the collection
         studies = TCIA_API_request('getPatientStudy','Collection={}'.format(collection_name))
-        print('{} studies'.format(len(studies)))
+        print('{} studies'.format(len(studies)), file=sys.stdout)
     except:
         print('Error getting studies list',file=sys.stderr)
         raise RuntimeError ("Failed to get series list")
@@ -180,7 +180,7 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
         # Get a list of the series in the collection
         seriess = TCIA_API_request('getSeries','Collection={}'.format(collection_name))
         sorted_seriess = sorted(seriess, key = lambda i: i['ImageCount'],reverse=True)
-        print('{} series'.format(len(seriess)))
+        print('{} series'.format(len(seriess)), file=sys.stdout)
     except:
         print('Error getting studies list',file=sys.stderr)
         raise RuntimeError ("Failed to get studies list")
@@ -234,7 +234,7 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
 #                p.join()
                 
         except queue.Empty as e:
-            print("Timeout in collection {}".format(tcia_name))
+            print("Timeout in collection {}".format(tcia_name), file=sys.stderr)
             compressed = -1
             uncompressed = -1
             for process in processes:

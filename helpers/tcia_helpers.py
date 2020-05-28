@@ -31,7 +31,8 @@ def TCIA_API_request(endpoint, parameters=""):
             results = json.loads(data)
             c.close()
             return results
-        except:
+        except pycurl.error as e:
+            print("Error {}; {} in TCIA_API_request".format(e[0],e[1]))
             rand = random.randint(1,10)
             print("Retrying in TCIA_API_request from {}".format(inspect.stack()[1]),file=sys.stderr)
             print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr)
@@ -107,13 +108,26 @@ def create_jsonlines_from_list(original):
 
 
 def TCIA_API_request_to_file(filename, endpoint, parameters=""):
-    with open(filename, 'wb') as f:
-        c = pycurl.Curl()
-        url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
-        c.setopt(c.URL, url)
-        c.setopt(c.WRITEDATA, f)
-        c.perform()
-        c.close()
+    retry=0
+    c.setopt(c.URL, url)
+    url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
+    while retry < MAX_RETRIES:
+        with open(filename, 'wb') as f:
+            c = pycurl.Curl()
+            c.setopt(c.WRITEDATA, f)
+            c.perform()
+            c.close()
+        except pycurl.error as e:
+            print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]))
+            rand = random.randint(1,10)
+            print("Retrying in TCIA_API_request_to_file from {}".format(inspect.stack()[1]),file=sys.stderr)
+            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr)
+            time.sleep(rand)
+            retry += 1
+            
+    c.close()
+    print("TCIA_API_request_to_file failed in call from {}".format(inspect.stack()[1]), file=sys.stderr)
+    raise RuntimeError (inspect.stack()[0:2])
 
 
 def get_collection_size(collection):
