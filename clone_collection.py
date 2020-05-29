@@ -17,7 +17,10 @@ UNEQUAL_INSTANCE_COUNT=-1
 CRC32C_MISMATCH=-2
 INVALID_ZIP=-3
 SERIES_CONTENT_DIFFERS=-4
-
+SERIES_DOWNLOAD_FAILED=-5
+GCS_UPLOAD_FAILED=-6
+PREVIOUSLY_DOWNLOADED=-7
+ZIP_EXTRACT_FAILED=-8
 def main(args):
     TCIA_NAME = args.collection
     processes = args.processes
@@ -35,7 +38,10 @@ def main(args):
 #        subprocess.run(['gsutil', '-m', '-q', 'rm', '-r', 'gs://{}'.format(idc_bucket_name)])
 #        bucket.delete_blobs(bucket.list_blobs())
     else:
-        bucket.create()
+        new_bucket = storage_client.create_bucket(bucket)
+        new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+        new_bucket.patch()
+                
     
     start = time.time()
     (compressed, uncompressed, series_statistics) = copy_collection(TCIA_NAME, processes, storage_client, PROJECT)
@@ -46,6 +52,7 @@ def main(args):
         uncompressed, float(compressed)/float(uncompressed) if float(uncompressed) > 0.0 else 1.0, file=sys.stdout))
     print("Elapsed time (s):{:.3}, Bandwidth (B/s): {:.3}".format(elapsed, compressed/elapsed), file=sys.stdout)  
     validated = no_validation = unequal_counts = crc32_mismatch = invalid_zip = series_content_differs = 0
+    series_download_failed = gcs_upload_failed = previously_downloaded = zip_extract_failed = 0
     for val in series_statistics:
         if val['validation'] == VALIDATED:
             validated +=1
@@ -59,17 +66,25 @@ def main(args):
             invalid_zip +=1
         elif val['validation'] == SERIES_CONTENT_DIFFERS:
             series_content_differs +=1
+        elif val['validation'] == SERIES_DOWNLOAD_FAILED:
+            series_download_failed +=1
+        elif val['validation'] == GCS_UPLOAD_FAILED:
+            gcs_upload_failed +=1
+        elif val['validation'] == PREVIOUSLY_DOWNLOADED:
+            previously_downloaded +=1
+        elif val['validation'] == ZIP_EXTRACT_FAILED:
+            zip_extract_failed +=1
         else:
-            print("Unknown validation result for {}/{}".format(val['study'],val['series']))
-    print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}, invalid zip: {}, series content differs: {}'.format(
-            validated, no_validation, unequal_counts, crc32_mismatch, invalid_zip, series_content_differs), file=sys.stdout)
+            print("Unknown validation result {} for {}/{}".format(val['validation'], val['study'], val['series']))
+    print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}, invalid zip: {}, series content differs: {}, series_download_failed: {}, gcs_upload_failed: {}, previously_downloaded: {}, zip_extract_failed: {} '.format(
+            validated, no_validation, unequal_counts, crc32_mismatch, invalid_zip, series_content_differs, series_download_failed, gcs_upload_failed, previously_downloaded, zip_extract_failed), file=sys.stdout)
 
     with open(os.environ['SERIES_STATISTICS'],'w') as f:
         print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed, 
             uncompressed, float(compressed)/float(uncompressed) if float(uncompressed) > 0.0 else 1.0), file=f)
         print("Elapsed time (s):{:.3}, Bandwidth (B/s): {:.3}".format(elapsed, compressed/elapsed), file=f)  
-        print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}'.format(
-            validated, no_validation, unequal_counts, crc32_mismatch), file=f)
+        print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}, invalid zip: {}, series content differs: {}, series_download_failed: {}, gcs_upload_failed: {}, previously_downloaded: {}, zip_extract_failed: {} '.format(
+            validated, no_validation, unequal_counts, crc32_mismatch, invalid_zip, series_content_differs, series_download_failed, gcs_upload_failed, previously_downloaded, zip_extract_failed), file=f)
         json.dump(series_statistics,f)
 
 if __name__ == "__main__":

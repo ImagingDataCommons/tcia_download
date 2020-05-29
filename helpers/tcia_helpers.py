@@ -15,8 +15,7 @@ from google.api_core.exceptions import BadRequest
 
 MAX_RETRIES=10
 
-def TCIA_API_request(endpoint, parameters=""):
-    
+def TCIA_API_request(endpoint, parameters=""):  
     retry = 0
     buffer = BytesIO()
     c = pycurl.Curl()
@@ -41,6 +40,31 @@ def TCIA_API_request(endpoint, parameters=""):
             
     c.close()
     print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr)
+    raise RuntimeError (inspect.stack()[0:2])
+
+
+def TCIA_API_request_to_file(filename, endpoint, parameters=""):
+    retry = 0
+    c = pycurl.Curl()
+    url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
+    while retry < MAX_RETRIES:
+        try:
+            with open(filename, 'wb') as f:
+                c.setopt(c.URL, url)
+                c.setopt(c.WRITEDATA, f)
+                c.perform()
+                c.close()
+                return
+        except pycurl.error as e:
+            print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]))
+            rand = random.randint(1,10)
+            print("Retrying in TCIA_API_request_to_file from {}".format(inspect.stack()[1]),file=sys.stderr)
+            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr)
+            time.sleep(rand)
+            retry += 1
+            
+    c.close()
+    print("TCIA_API_request_to_file failed in call from {}".format(inspect.stack()[1]), file=sys.stderr)
     raise RuntimeError (inspect.stack()[0:2])
 
 
@@ -105,29 +129,6 @@ def create_jsonlines_from_list(original):
     result = [json.dumps(record) for record in json.load(in_json)]
     result = '\n'.join(result)
     return result
-
-
-def TCIA_API_request_to_file(filename, endpoint, parameters=""):
-    retry=0
-    c.setopt(c.URL, url)
-    url = 'https://services.cancerimagingarchive.net/services/v3/TCIA/query/{}?{}'.format(endpoint,parameters)
-    while retry < MAX_RETRIES:
-        with open(filename, 'wb') as f:
-            c = pycurl.Curl()
-            c.setopt(c.WRITEDATA, f)
-            c.perform()
-            c.close()
-        except pycurl.error as e:
-            print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]))
-            rand = random.randint(1,10)
-            print("Retrying in TCIA_API_request_to_file from {}".format(inspect.stack()[1]),file=sys.stderr)
-            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr)
-            time.sleep(rand)
-            retry += 1
-            
-    c.close()
-    print("TCIA_API_request_to_file failed in call from {}".format(inspect.stack()[1]), file=sys.stderr)
-    raise RuntimeError (inspect.stack()[0:2])
 
 
 def get_collection_size(collection):

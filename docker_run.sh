@@ -1,6 +1,7 @@
 #!/bin/bash
-COLLECTION=TCGA-SARC
-BUCKET_NAME=tcga-sarc
+COLLECTION=CPTAC-LSCC
+BUCKET_NAME=cptac-lscc
+mkdir ./idc-dsub-logs/output/${BUCKET_NAME}
 docker run \
        -v $HOME/tcia_download:/root/tcia_download \
        --env GOOGLE_APPLICATION_CREDENTIALS=/root/tcia_download/application_default_config.json \
