@@ -49,8 +49,8 @@ def main(args):
     elapsed = end - start
 
     print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed, 
-        uncompressed, float(compressed)/float(uncompressed) if float(uncompressed) > 0.0 else 1.0, file=sys.stdout))
-    print("Elapsed time (s):{:.3}, Bandwidth (B/s): {:.3}".format(elapsed, compressed/elapsed), file=sys.stdout)  
+        uncompressed, float(compressed)/float(uncompressed) if float(uncompressed) > 0.0 else 1.0, file=sys.stdout), flush=True)
+    print("Elapsed time (s):{:.3}, Bandwidth (B/s): {:.3}".format(elapsed, compressed/elapsed), file=sys.stdout, flush=True)
     validated = no_validation = unequal_counts = crc32_mismatch = invalid_zip = series_content_differs = 0
     series_download_failed = gcs_upload_failed = previously_downloaded = zip_extract_failed = 0
     for val in series_statistics:
@@ -75,9 +75,9 @@ def main(args):
         elif val['validation'] == ZIP_EXTRACT_FAILED:
             zip_extract_failed +=1
         else:
-            print("Unknown validation result {} for {}/{}".format(val['validation'], val['study'], val['series']))
+            print("Unknown validation result {} for {}/{}".format(val['validation'], val['study'], val['series']), file=sys.stderr, flush=True)
     print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}, invalid zip: {}, series content differs: {}, series_download_failed: {}, gcs_upload_failed: {}, previously_downloaded: {}, zip_extract_failed: {} '.format(
-            validated, no_validation, unequal_counts, crc32_mismatch, invalid_zip, series_content_differs, series_download_failed, gcs_upload_failed, previously_downloaded, zip_extract_failed), file=sys.stdout)
+            validated, no_validation, unequal_counts, crc32_mismatch, invalid_zip, series_content_differs, series_download_failed, gcs_upload_failed, previously_downloaded, zip_extract_failed), file=sys.stdout, flush=True)
 
     with open(os.environ['SERIES_STATISTICS'],'w') as f:
         print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed, 

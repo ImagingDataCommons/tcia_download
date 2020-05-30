@@ -1,9 +1,10 @@
 #!/bin/bash
-COLLECTION=CPTAC-LSCC
-BUCKET_NAME=cptac-lscc
-mkdir ./idc-dsub-logs/output/${BUCKET_NAME}
+COLLECTION=TCGA-BLCA
+BUCKET_NAME=tcga-blca
+
+mkdir -p ./idc-dsub-logs/output/${BUCKET_NAME}
 docker run \
-       -v $HOME/tcia_download:/root/tcia_download \
+       -v $HOME/git-home/tcia_download:/root/tcia_download \
        --env GOOGLE_APPLICATION_CREDENTIALS=/root/tcia_download/application_default_config.json \
        --env SERIES_STATISTICS=/root/tcia_download/idc-dsub-logs/output/${BUCKET_NAME}/series_statistics.log \
        --env OUTPUT_FILE=/root/tcia_download/idc-dsub-logs/output/${BUCKET_NAME}/stdout.log \

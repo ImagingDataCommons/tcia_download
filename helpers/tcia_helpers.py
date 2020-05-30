@@ -31,15 +31,15 @@ def TCIA_API_request(endpoint, parameters=""):
             c.close()
             return results
         except pycurl.error as e:
-            print("Error {}; {} in TCIA_API_request".format(e[0],e[1]))
+            print("Error {}; {} in TCIA_API_request".format(e[0],e[1]), file=sys.stderr, flush=True)
             rand = random.randint(1,10)
-            print("Retrying in TCIA_API_request from {}".format(inspect.stack()[1]),file=sys.stderr)
-            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr)
+            print("Retrying in TCIA_API_request from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
+            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
             time.sleep(rand)
             retry += 1
             
     c.close()
-    print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr)
+    print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
     raise RuntimeError (inspect.stack()[0:2])
 
 
@@ -56,15 +56,15 @@ def TCIA_API_request_to_file(filename, endpoint, parameters=""):
                 c.close()
                 return
         except pycurl.error as e:
-            print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]))
+            print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]), file=sys.stderr, flush=True)
             rand = random.randint(1,10)
-            print("Retrying in TCIA_API_request_to_file from {}".format(inspect.stack()[1]),file=sys.stderr)
-            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr)
+            print("Retrying in TCIA_API_request_to_file from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
+            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
             time.sleep(rand)
             retry += 1
             
     c.close()
-    print("TCIA_API_request_to_file failed in call from {}".format(inspect.stack()[1]), file=sys.stderr)
+    print("TCIA_API_request_to_file failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
     raise RuntimeError (inspect.stack()[0:2])
 
 
@@ -134,7 +134,7 @@ def create_jsonlines_from_list(original):
 def get_collection_size(collection):
     size = 0
     serieses=TCIA_API_request('getSeries', parameters="Collection={}".format(collection.replace(' ','_')))
-    print("{} series in {}".format(len(serieses), collection))
+    print("{} series in {}".format(len(serieses), collection), flush=True)
     for aseries in serieses:
         seriesSize=TCIA_API_request('getSeriesSize', parameters="SeriesInstanceUID={}".format(aseries['SeriesInstanceUID']))
 #             print(seriesSize)

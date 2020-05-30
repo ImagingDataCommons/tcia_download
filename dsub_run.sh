@@ -6,6 +6,6 @@ dsub \
     --logging gs://idc-dsub-app-logs \
     --image gcr.io/idc-dev-etl/tcia_cloner \
     --mount CLONE_TCIA=gs://idc-dsub-clone-tcia \
-    --task ./tasks.tsv 46 \
+    --task ./tasks.tsv 51-53 \
     --command 'python "${CLONE_TCIA}"/clone_collection.py -c "${TCIA_NAME}" -p 4 > "${OUTPUT_FILE}"' \
     --wait
