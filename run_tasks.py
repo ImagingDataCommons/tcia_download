@@ -108,10 +108,9 @@ def main(procs, first_task, total_tasks, task_file):
             '--mount', 'CLONE_TCIA={}'.format('gs://idc-dsub-clone-tcia'),
             '--env', 'TCIA_NAME="{}"'.format(tasks[task].split('\t')[0]),
             '--output', 'SERIES_STATISTICS={}'.format(series_statistics),
-            '--output', 'OUTPUT_FILE={}'.format(output_file),
-            '--command',"'" + 'python '+'"${CLONE_TCIA}"'+'/clone_collection.py -c '+'"${TCIA_NAME}"'+' -p 4 > '+'"${OUTPUT_FILE}"' + "'"]
+            '--command',"'" + 'python '+'"${CLONE_TCIA}"'+'/clone_collection.py -c '+'"${TCIA_NAME}"'+' -p 4' + "'"]
 
- #       print(dsub_dict)
+        #       print(dsub_dict)
         dsub_string = ' '.join(dsub_dict)
 
  #       print(dsub_string)
