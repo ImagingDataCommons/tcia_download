@@ -2,25 +2,16 @@
 
 # Clone a TCIA collection to GCS
 
-from google.cloud import bigquery,storage
+from google.cloud import storage
 import time
 import os,sys,json
 sys.path.append(os.environ['CLONE_TCIA'])
-from cloner import copy_collection
+from helpers.cloner import copy_collection
 import argparse
 import subprocess
+from collections import OrderedDict
 PROJECT = 'idc-dev-etl'
 
-VALIDATED=1
-NO_VALIDATION=0
-UNEQUAL_INSTANCE_COUNT=-1
-CRC32C_MISMATCH=-2
-INVALID_ZIP=-3
-SERIES_CONTENT_DIFFERS=-4
-SERIES_DOWNLOAD_FAILED=-5
-GCS_UPLOAD_FAILED=-6
-PREVIOUSLY_DOWNLOADED=-7
-ZIP_EXTRACT_FAILED=-8
 def main(args):
     TCIA_NAME = args.collection
     processes = args.processes
@@ -33,64 +24,48 @@ def main(args):
     bucket_url = "gs://{}".format(idc_bucket_name)
 
     bucket = storage_client.bucket(idc_bucket_name)
-    if bucket.exists():
-        pass
-#        subprocess.run(['gsutil', '-m', '-q', 'rm', '-r', 'gs://{}'.format(idc_bucket_name)])
-#        bucket.delete_blobs(bucket.list_blobs())
-    else:
+    if not bucket.exists():
         new_bucket = storage_client.create_bucket(bucket)
         new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
         new_bucket.patch()
                 
-    
     start = time.time()
     (compressed, uncompressed, series_statistics) = copy_collection(TCIA_NAME, processes, storage_client, PROJECT)
     end = time.time()
     elapsed = end - start
 
-    print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed, 
+    # Sum the validation results over all series
+    validated = OrderedDict()
+    for key in series_statistics[0]['validation']:
+        validated[key] = 0
+    for series in series_statistics:
+        for key in series['validation']:
+            validated[key] += series['validation'][key]
+
+    print('{}'.format(idc_bucket_name))
+    print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed,
         uncompressed, float(compressed)/float(uncompressed) if float(uncompressed) > 0.0 else 1.0, file=sys.stdout), flush=True)
     print("Elapsed time (s):{:.3}, Bandwidth (B/s): {:.3}".format(elapsed, compressed/elapsed), file=sys.stdout, flush=True)
-    validated = no_validation = unequal_counts = crc32_mismatch = invalid_zip = series_content_differs = 0
-    series_download_failed = gcs_upload_failed = previously_downloaded = zip_extract_failed = 0
-    for val in series_statistics:
-        if val['validation'] == VALIDATED:
-            validated +=1
-        elif val['validation'] == NO_VALIDATION:
-            no_validation += 1
-        elif val['validation'] == UNEQUAL_INSTANCE_COUNT:
-            unequal_counts += 1
-        elif val['validation'] == CRC32C_MISMATCH:
-            crc32_mismatch +=1
-        elif val['validation'] == INVALID_ZIP:
-            invalid_zip +=1
-        elif val['validation'] == SERIES_CONTENT_DIFFERS:
-            series_content_differs +=1
-        elif val['validation'] == SERIES_DOWNLOAD_FAILED:
-            series_download_failed +=1
-        elif val['validation'] == GCS_UPLOAD_FAILED:
-            gcs_upload_failed +=1
-        elif val['validation'] == PREVIOUSLY_DOWNLOADED:
-            previously_downloaded +=1
-        elif val['validation'] == ZIP_EXTRACT_FAILED:
-            zip_extract_failed +=1
-        else:
-            print("Unknown validation result {} for {}/{}".format(val['validation'], val['study'], val['series']), file=sys.stderr, flush=True)
-    print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}, invalid zip: {}, series content differs: {}, series_download_failed: {}, gcs_upload_failed: {}, previously_downloaded: {}, zip_extract_failed: {} '.format(
-            validated, no_validation, unequal_counts, crc32_mismatch, invalid_zip, series_content_differs, series_download_failed, gcs_upload_failed, previously_downloaded, zip_extract_failed), file=sys.stdout, flush=True)
+    for key in validated:
+        print('{:30} {}'.format(key, validated[key]))
 
     with open(os.environ['SERIES_STATISTICS'],'w') as f:
-        print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed, 
+        print('{}'.format(idc_bucket_name), file=f)
+        print("Compressed bytes: {:,}, Uncompressed bytes: {:,}, Compression: {:.3}".format(compressed,
             uncompressed, float(compressed)/float(uncompressed) if float(uncompressed) > 0.0 else 1.0), file=f)
-        print("Elapsed time (s):{:.3}, Bandwidth (B/s): {:.3}".format(elapsed, compressed/elapsed), file=f)  
-        print('Validated: {}, No validation: {}, Unequal counts: {}, CRC32C mismatch: {}, invalid zip: {}, series content differs: {}, series_download_failed: {}, gcs_upload_failed: {}, previously_downloaded: {}, zip_extract_failed: {} '.format(
-            validated, no_validation, unequal_counts, crc32_mismatch, invalid_zip, series_content_differs, series_download_failed, gcs_upload_failed, previously_downloaded, zip_extract_failed), file=f)
-        json.dump(series_statistics,f)
+        print("Elapsed time (s):{:.3}, Bandwidth (B/s): {:.3}".format(elapsed, compressed/elapsed), file=f)
+        for key in validated:
+            print('{:30} {}'.format(key, validated[key]), file=f)
+        print('', file=f)
+        for series in series_statistics:
+            validation = [series['validation'][key] for key in series['validation']]
+            print("study: {}, series: {}, compressed: {}, uncompressed: {}, validation: {}".format(
+                series['study'], series['series'], series['compressed'], series['uncompressed'], json.dumps(validation)), file=f)
 
 if __name__ == "__main__":
     parser =argparse.ArgumentParser()
     parser.add_argument('--collection','-c', help='Collection name as returned by TCIA /query/getCollectionValues API')
-    parser.add_argument('--processes','-p', type=int, default=4, help='Number ofworker processes')
+    parser.add_argument('--processes','-p', type=int, default=4, help='Number of worker processes')
     argz = parser.parse_args()
-    print(argz)
+    print("{}".format(argz), file=sys.stdout)
     main(argz)

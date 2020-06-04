@@ -35,9 +35,17 @@ def run_dsub(tcia_name, dsub_string):
     internal_id = internal_id[0:internal_id.find('\\n')]
     print("{} internal_id: {}".format(tcia_name, internal_id), file=sys.stdout, flush=True)
 
-    genomics_command = "gcloud alpha genomics operations describe {}\n".format(internal_id)
+    genomics_command = "gcloud alpha genomics operations describe {}".format(internal_id)
     print("{} genomics status command: {}".format(tcia_name, genomics_command), file=sys.stdout, flush=True)
     arg = shlex.split(genomics_command)
+
+    while True:
+        results = subprocess.run(arg, stdout=PIPE, stderr=PIPE)
+        stdout =  str(results.stdout)
+        if 'Worker "google-pipelines-worker' in stdout:
+            print('{} instance: {}\n'.format(tcia_name, stdout.split('Worker "')[1].split('"')[0]))
+            break
+        time.sleep(1)
     while True:
         results = subprocess.run(arg, stdout=PIPE, stderr=PIPE)
         #print("Output from subprocess: {}".format(results))
@@ -61,7 +69,7 @@ def worker(input, output):
         output.put(result)
 
 
-def main(procs, first_task, total_tasks, task_file):
+def main(procs, first_task, total_tasks, task_file, workers):
     """Feed dsub commands to a group of processes
     Parameters
     ----------
@@ -95,20 +103,22 @@ def main(procs, first_task, total_tasks, task_file):
 
     while task < first_task + total_tasks:
         current_time = time.strftime("%y%m%d-%H%M%S")
+        bucket_name = tasks[task].split('\t')[0].lower().replace(' ','-')
         series_statistics = "{}.{}.log".format(tasks[task].split('\t')[1].split('.')[0], current_time)
         output_file = "{}.{}.log".format(tasks[task].split('\t')[2].split('.')[0], current_time)
         dsub_dict = [
             '/Users/BillClifford/git-home/tcia_download/env/bin/dsub',
             '--provider', 'google-v2',
+            '--machine-type', 'n2-standard-2',
             '--ssh',
             '--regions', 'us-central1',
             '--project', 'idc-dev-etl',
-            '--logging', 'gs://idc-dsub-app-logs',
+            '--logging', 'gs://idc-dsub-app-logs/{}'.format(bucket_name),
             '--image', 'gcr.io/idc-dev-etl/tcia_cloner',
             '--mount', 'CLONE_TCIA={}'.format('gs://idc-dsub-clone-tcia'),
             '--env', 'TCIA_NAME="{}"'.format(tasks[task].split('\t')[0]),
             '--output', 'SERIES_STATISTICS={}'.format(series_statistics),
-            '--command',"'" + 'python '+'"${CLONE_TCIA}"'+'/clone_collection.py -c '+'"${TCIA_NAME}"'+' -p 4' + "'"]
+            '--command',"'" + 'python '+'"${CLONE_TCIA}"'+'/clone_collection.py -c '+'"${TCIA_NAME}"'+' -p {}'.format(workers)  + "'"]
 
         #       print(dsub_dict)
         dsub_string = ' '.join(dsub_dict)
@@ -130,7 +140,7 @@ def main(procs, first_task, total_tasks, task_file):
     try:
         while task >first_task:
             results = done_queue.get()
-            print("Completed {}".format(results), file=sys.stdout, flush=True)
+            print("Completed {} at {}".format(results, time.asctime()), file=sys.stdout, flush=True)
             task -= 1
         # Tell child processes stop
         for process in processes:
@@ -149,8 +159,9 @@ if __name__ == '__main__':
     parser.add_argument('--processes', '-p', type=int, default=1)
     parser.add_argument('--initial', '-i', type=int, default=1)
     parser.add_argument('--tasks', '-t', type=int, default=1)
+    parser.add_argument('--workers', '-w', type=int, help='Number of worker processes in a task', default=4)
     parser.add_argument('--file', '-f', default='tasks.tsv')
     argz = parser.parse_args()
     print(argz)
-    main(argz.processes, argz.initial, argz.tasks, argz.file)
+    main(argz.processes, argz.initial, argz.tasks, argz.file, argz.workers)
 

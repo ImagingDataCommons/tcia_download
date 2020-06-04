@@ -1,17 +1,17 @@
 import json
 import sys
 import pycurl
-import zipfile
-import os
-import shutil
-import pydicom
-import time
+import inspect
+# import zipfile
+# import os
+# import shutil
+import time, datetime
 import random
 from io import BytesIO, StringIO
 
-from google.cloud import bigquery,storage
-from google.cloud.exceptions import NotFound
-from google.api_core.exceptions import BadRequest
+# from google.cloud import bigquery,storage
+# from google.cloud.exceptions import NotFound
+# from google.api_core.exceptions import BadRequest
 
 MAX_RETRIES=10
 
@@ -29,17 +29,24 @@ def TCIA_API_request(endpoint, parameters=""):
 #            print('Raw TCIA data: {}'.format(data),file=sys.stderr)
             results = json.loads(data)
             c.close()
+            if retry > 1:
+                print("TCIA_API_request successful on retry {}".format(retry))
             return results
-        except pycurl.error as e:
-            print("Error {}; {} in TCIA_API_request".format(e[0],e[1]), file=sys.stderr, flush=True)
+
+        except:
+            # print("Error {}; {} in TCIA_API_request".format(e[0],e[1]), file=sys.stderr, flush=True)
+            print("Error in TCIA_API_request", file=sys.stdout, flush=True)
             rand = random.randint(1,10)
-            print("Retrying in TCIA_API_request from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
-            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
+            # print("Retrying in TCIA_API_request from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
+            # print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
+            print("Retrying in TCIA_API_request from {}".format(inspect.stack()[1]), file=sys.stdout, flush=True)
+            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stdout, flush=True)
             time.sleep(rand)
             retry += 1
             
     c.close()
-    print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
+    # print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
+    print("TCIA_API_request failed in call from {}".format(inspect.stack()[1]), file=sys.stdout, flush=True)
     raise RuntimeError (inspect.stack()[0:2])
 
 
@@ -54,18 +61,25 @@ def TCIA_API_request_to_file(filename, endpoint, parameters=""):
                 c.setopt(c.WRITEDATA, f)
                 c.perform()
                 c.close()
-                return
-        except pycurl.error as e:
-            print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]), file=sys.stderr, flush=True)
+            if retry > 1:
+                print("TCIA_API_request_to_file successful on retry {}".format(retry))
+            return 0
+
+        except:
+            # print("Error {}; {} in TCIA_API_request_to_file".format(e[0],e[1]), file=sys.stderr, flush=True)
+            print("Error in TCIA_API_request_to_file: {},{},{}".format(sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
             rand = random.randint(1,10)
-            print("Retrying in TCIA_API_request_to_file from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
-            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
+            # print("Retrying in TCIA_API_request_to_file from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
+            # print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stderr, flush=True)
+            print("Retrying in TCIA_API_request_to_file from {}".format(inspect.stack()[1]), file=sys.stdout, flush=True)
+            print("Retry {}, sleeping {} seconds".format(retry, rand), file=sys.stdout, flush=True)
             time.sleep(rand)
             retry += 1
             
     c.close()
-    print("TCIA_API_request_to_file failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
-    raise RuntimeError (inspect.stack()[0:2])
+    # print("TCIA_API_request_to_file failed in call from {}".format(inspect.stack()[1]), file=sys.stderr, flush=True)
+    print("TCIA_API_request_to_file failed in call from {}".format(inspect.stack()[1]), file=sys.stdout, flush=True)
+    return -1
 
 
 def get_TCIA_collections():
@@ -114,7 +128,7 @@ def get_TCIA_series():
     # We only need a few values 
     # We create a revision date field, filled with today's date (UTC +0), until TCIA returns a revision date 
     # in the response to getSeries
-    today = date.today().isoformat()
+    today = datetime.date.today().isoformat()
     data = [{'CollectionID':result['Collection'],
           'StudyInstanceUID':result['StudyInstanceUID'],
           'SeriesInstanceUID':result['SeriesInstanceUID'],

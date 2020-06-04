@@ -1,0 +1,9 @@
+*.json
+*.log
+.idea
+env/
+foo
+helpers/__pycache__/
+logs/
+results/
+tasks.new.tsv
