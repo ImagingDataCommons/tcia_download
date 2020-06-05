@@ -4,6 +4,7 @@ from subprocess import run, PIPE
 import os, shutil
 
 def main():
+    print(os.environ['PWD'])
     path = '{}/results/series_statistics'.format(os.environ['PWD'])
     if os.path.isdir(path):
         shutil.rmtree(path)

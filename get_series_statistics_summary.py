@@ -8,6 +8,7 @@ import argparse
 
 def main(filename):
     path = join(os.environ['PWD'],'results')
+    print(os.environ['PWD'])
 
     collections = [f for f in listdir(join(path, 'series_statistics'))]
     collections.sort()
