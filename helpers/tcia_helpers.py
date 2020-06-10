@@ -156,7 +156,7 @@ def get_collection_size(collection):
         print("{} {}\r".format(aseries['SeriesInstanceUID'], size),end="")
     return size
 
-def get_collection_sizes():
+def get_collection_sizes_in_bytes():
     sizes = {}
     collections = get_TCIA_collections()
     collections.sort(reverse=True)
@@ -164,4 +164,14 @@ def get_collection_sizes():
         sizes[collection] = get_collection_size(collection)
     return sizes
 
+def get_collection_sizes():
+    collections = get_TCIA_collections()
+    counts = {collection:0 for collection in collections}
+    serieses=TCIA_API_request('getSeries')
+    for aseries in serieses:
+        counts[aseries['Collection']] += int(aseries['ImageCount'])
+    sorted_counts = [(k, v) for k, v in sorted(counts.items(), key=lambda item: item[1])]
+    return sorted_counts
+if __name__ == "__main__":
+    counts = get_collection_sizes()
 # sizes = get_collection_sizes()

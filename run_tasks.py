@@ -18,6 +18,7 @@ def run_dsub(tcia_name, dsub_string):
     if results.returncode < 0:
         print("Dsub failed with error {}".format(results.returncode), file=sys.stderr, flush=True)
         return (tcia_name,results)
+
     # We now need to get the status of the task we just launched.
     stderr = str(results.stderr)
     dstat_cmd ="{} --status '*' --full".format(stderr[stderr.find('dstat'):stderr.find("--status")])
@@ -39,6 +40,7 @@ def run_dsub(tcia_name, dsub_string):
     print("{} genomics status command: {}".format(tcia_name, genomics_command), file=sys.stdout, flush=True)
     arg = shlex.split(genomics_command)
 
+    # Get the VM ID for this task
     while True:
         results = subprocess.run(arg, stdout=PIPE, stderr=PIPE)
         stdout =  str(results.stdout)
@@ -46,6 +48,8 @@ def run_dsub(tcia_name, dsub_string):
             print('{} instance: {}\n'.format(tcia_name, stdout.split('Worker "')[1].split('"')[0]))
             break
         time.sleep(1)
+
+    # Wait for genomics to call the task done
     while True:
         results = subprocess.run(arg, stdout=PIPE, stderr=PIPE)
         #print("Output from subprocess: {}".format(results))
@@ -69,18 +73,11 @@ def worker(input, output):
         output.put(result)
 
 
-def main(procs, first_task, total_tasks, task_file, workers):
+def main(args):
     """Feed dsub commands to a group of processes
     Parameters
     ----------
-    procs : int
-        Number of processes to run
-    first_task : int
-        Index in tasks_file of first task to run
-    total_tasks : int
-        Number of tasks to run 
-    task_file : str
-        Path to task file
+    args: argparse arguments
     """
     
     task_queue = Queue()
@@ -88,24 +85,26 @@ def main(procs, first_task, total_tasks, task_file, workers):
     
     # Start worker processes
     processes = []
-    for i in range(procs):
+    for i in range(args.processes):
         process = Process(target=worker, args=(task_queue, done_queue))
         process.start()
         processes.append(process)
 
     # Get the list of possible tasks
-    with open(task_file) as f:
+    with open(args.file) as f:
         tasks = f.read().splitlines()
         
-    task = first_task
+    task = args.initial
     
 #     print(tasks)
 
-    while task < first_task + total_tasks:
+    while task < args.initial + args.count:
         current_time = time.strftime("%y%m%d-%H%M%S")
         bucket_name = tasks[task].split('\t')[0].lower().replace(' ','-')
-        series_statistics = "{}.{}.log".format(tasks[task].split('\t')[1].split('.')[0], current_time)
-        output_file = "{}.{}.log".format(tasks[task].split('\t')[2].split('.')[0], current_time)
+#        series_statistics = "{}.{}.log".format(tasks[task].split('\t')[1].split('.')[0], current_time)
+        series_statistics = "gs://idc-logs/{}/app/{}/series_statistics.{}.log".format(args.version,bucket_name, current_time)
+        logging = "gs://idc-logs/{}/dsub/{}".format(args.version,bucket_name)
+#        output_file = "{}.{}.log".format(tasks[task].split('\t')[2].split('.')[0], current_time)
         dsub_dict = [
             '/Users/BillClifford/git-home/tcia_download/env/bin/dsub',
             '--provider', 'google-v2',
@@ -113,12 +112,15 @@ def main(procs, first_task, total_tasks, task_file, workers):
             '--ssh',
             '--regions', 'us-central1',
             '--project', 'idc-dev-etl',
-            '--logging', 'gs://idc-dsub-app-logs/{}'.format(bucket_name),
+            '--logging', logging,
             '--image', 'gcr.io/idc-dev-etl/tcia_cloner',
             '--mount', 'CLONE_TCIA={}'.format('gs://idc-dsub-clone-tcia'),
             '--env', 'TCIA_NAME="{}"'.format(tasks[task].split('\t')[0]),
+            '--env', 'REF_PREFIX="{}"'.format(args.ref),
+            '--env', 'TRG_PREFIX="{}"'.format(args.trg),
+            '--env', 'PROJECT="{}"'.format(args.project),
             '--output', 'SERIES_STATISTICS={}'.format(series_statistics),
-            '--command',"'" + 'python '+'"${CLONE_TCIA}"'+'/clone_collection.py -c '+'"${TCIA_NAME}"'+' -p {}'.format(workers)  + "'"]
+            '--command',"'" + 'python '+'"${CLONE_TCIA}"'+'/clone_collection.py -c '+'"${TCIA_NAME}"'+' -p {}'.format(args.workers)  + "'"]
 
         #       print(dsub_dict)
         dsub_string = ' '.join(dsub_dict)
@@ -126,11 +128,11 @@ def main(procs, first_task, total_tasks, task_file, workers):
  #       print(dsub_string)
  #       print(shlex.split(dsub_string))
 
-        if procs == 0:
+        if args.processes == 0:
             run_dsub(tasks[task].split('\t')[0], dsub_string)
         else:
             # Enqueue the dsub command   
-            print("Enqueuing {}\n".format(dsub_string), file=sys.stdout, flush=True)
+            # print("Enqueuing {}\n".format(dsub_string), file=sys.stdout, flush=True)
             task_queue.put((tasks[task].split('\t')[0], dsub_string))
 
         time.sleep(2)
@@ -138,7 +140,7 @@ def main(procs, first_task, total_tasks, task_file, workers):
 
     # Now wait for processes to complete
     try:
-        while task >first_task:
+        while task > args.initial:
             results = done_queue.get()
             print("Completed {} at {}".format(results, time.asctime()), file=sys.stdout, flush=True)
             task -= 1
@@ -158,10 +160,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--processes', '-p', type=int, default=1)
     parser.add_argument('--initial', '-i', type=int, default=1)
-    parser.add_argument('--tasks', '-t', type=int, default=1)
+    parser.add_argument('--count', '-c', type=int, default=1, help='Number of tasks to run')
     parser.add_argument('--workers', '-w', type=int, help='Number of worker processes in a task', default=4)
+    parser.add_argument('--ref', '-r', default='idc-tcia-', help='Prefix of reference collection buckets')
+    parser.add_argument('--trg', '-t', default='idc-tcia-1-', help='Prefix of target collection buckets, buckets being newly populated')
+    parser.add_argument('--version', '-v', default='1', help='Version of target data set')
     parser.add_argument('--file', '-f', default='tasks.tsv')
-    argz = parser.parse_args()
-    print(argz)
-    main(argz.processes, argz.initial, argz.tasks, argz.file, argz.workers)
+    parser.add_argument('--project', default='idc-dev-etl')
+    args = parser.parse_args()
+    print(args)
+    main(args)
 

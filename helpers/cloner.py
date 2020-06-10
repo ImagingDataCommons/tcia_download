@@ -2,165 +2,217 @@
 # import re
 from google.cloud import storage
 import subprocess
-import os,sys
+import os
+import sys
 from collections import OrderedDict
 import zipfile
 import shutil
 import pydicom
 from random import shuffle
-from multiprocessing import Process, Queue, current_process, freeze_support
+from multiprocessing import Process, Queue
 from queue import Empty
-import re
+import logging
 
 sys.path.append(os.environ['CLONE_TCIA'])
-
 from helpers.tcia_helpers import *
 
 DICOM = os.environ['TMPDIR']
-print('TMPDIR: {}'.format(os.environ['TMPDIR']))
-print('DICOM: {}'.format(DICOM))
-#DICOM = '/mnt/data/workingdir'
-
-def validate_series(idcs, chc_bucket_name, study, series, storage_client):                   
-    
-    chc_blobs = storage_client.bucket(chc_bucket_name,user_project='idc-dev-etl').list_blobs(prefix="dicom/{}/{}".format(study,series))
-    
-    chcs = {blob.name:blob.crc32c for blob in chc_blobs}
-
-    if len(chcs) == 0:
-        return 'series not in chc collection'
-    
-    try:
-        assert len(idcs) == len(chcs)
-    except:
-        # print("Validation error on {}".format("dicom/{}/{}".format(study,series)), file=sys.stderr, flush=True)
-        # print("Instance count idc: {}, chc: {}".format(len(idcs),len(chcs)), file=sys.stderr, flush=True)
-        print("Validation error on {}".format("dicom/{}/{}".format(study,series)), file=sys.stdout, flush=True)
-        print("Instance count idc: {}, chc: {}".format(len(idcs),len(chcs)), file=sys.stdout, flush=True)
-        return 'unequal instance counts'
-    
-    for ImageInstanceUID in idcs:
-        try:
-            assert idcs[ImageInstanceUID] == chcs[ImageInstanceUID]
-        except:
-            if ImageInstanceUID in chcs:
-                # print("Validation error on {}".format(ImageInstanceUID), file=sys.stderr, flush=True)
-                # print("idc crc32c: {}, gcs public crc32c: {}".format(idcs[ImageInstanceUID],chcs[ImageInstanceUID]), file=sys.stderr, flush=True)
-                print("Validation error on {}".format("dicom/{}/{}".format(study, series)), file=sys.stdout, flush=True)
-                print("Instance count idc: {}, chc: {}".format(len(idcs), len(chcs)), file=sys.stdout, flush=True)
-                return 'crc32c mismatch'
-            else:
-                # print("Validation error on {}".format(ImageInstanceUID), file=sys.stderr, flush=True)
-                # print("idc instance not in GCS", file=sys.stderr, flush=True)
-                print("Validation error on {}".format(ImageInstanceUID), file=sys.stdout, flush=True)
-                print("idc instance not in GCS", file=sys.stdout, flush=True)
-                return 'series content differs'
-                            
-    return 'validated'
+PROJECT = os.environ['PROJECT']
+REF_PREFIX = os.environ['REF_PREFIX']
+TRG_PREFIX = os.environ['TRG_PREFIX']
 
 
 # Get information from GCS about the blobs in a series
-def get_idcs(idc_bucket_name, study, series, storage_client):
-    idc_blobs = storage_client.bucket(idc_bucket_name,user_project='idc-dev-etl').list_blobs(prefix="dicom/{}/{}".format(study,series))
-    idcs = {blob.name:blob.crc32c for blob in idc_blobs}
-    return idcs
+def get_series_info(bucket_name, study, series, storage_client):
+    # print('get_series_info args, bucket_name: {}, study: {}, series: {}, storage_client: {}'.format(
+    #     bucket_name, study, series, storage_client
+    # ))
+    blobs = storage_client.bucket(bucket_name, user_project=PROJECT).list_blobs(
+        prefix="dicom/{}/{}/".format(study, series))
+    series_info = {blob.name: blob.crc32c for blob in blobs}
+    return series_info
 
-               
-def copy_series(study, series, image_count, idc_bucket_name, chc_bucket_name, storage_client, validate):
 
+def validate_series(target_bucket_name, reference_bucket_name, study, series, storage_client, validation):
+    
+    # # Get info on each of the blobs in the the reference collection
+    # ref_blobs = storage_client.bucket(reference_bucket_name, user_project=PROJECT).list_blobs(prefix="dicom/{}/{}".format(study,series))
+    #
+    # ref_info = {blob.name: blob.crc32c for blob in ref_blobs}
+    trg_info = get_series_info(target_bucket_name, study, series, storage_client)
+    ref_info = get_series_info(reference_bucket_name, study, series, storage_client)
+
+    if len(ref_info) == 0:
+        print("\talidation error on {}".format("dicom/{}/{}".format(study,series)), file=sys.stdout, flush=True)
+        print("\tSeries {} not in reference collection".format("dicom/{}/{}".format(study,series)), file=sys.stdout, flush=True)
+        validation['series not in reference collection'] = 1
+        return validation
+
+    if not len(trg_info) == len(ref_info):
+        # print("Validation error on {}".format("dicom/{}/{}".format(study,series)), file=sys.stderr, flush=True)
+        # print("Instance count target: {}, reference: {}".format(len(trg_info),len(ref_info)), file=sys.stderr, flush=True)
+        print("\tValidation error on {}".format("dicom/{}/{}".format(study,series)), file=sys.stdout, flush=True)
+        print("\tInstance count target: {}, reference: {}".format(len(trg_info),len(ref_info)), file=sys.stdout, flush=True)
+        for ImageInstanceUID in trg_info:
+            if not ImageInstanceUID in ref_info:
+                print("\t\t{} in target, not in reference".format(ImageInstanceUID), file=sys.stdout, flush=True)
+        for ImageInstanceUID in ref_info:
+            if not ImageInstanceUID in trg_info:
+                print("\t\t{} in reference, not in target".format(ImageInstanceUID), file=sys.stdout, flush=True)
+        validation['unequal instance counts'] = 1
+        return validation
+
+    for ImageInstanceUID in trg_info:
+        # Check if the two series have the same number of instances but different instance UIDs
+        if not ImageInstanceUID in ref_info:
+            # print("Validation error on {}".format(ImageInstanceUID), file=sys.stderr, flush=True)
+            # print("target instance not in GCS", file=sys.stderr, flush=True)
+            print("\tValidation error on {}".format(ImageInstanceUID), file=sys.stdout, flush=True)
+            print("\tInstance not in reference", file=sys.stdout, flush=True)
+            validation['series content differs'] = 1
+        # Check if the crc32c of this instance is different in the target and reference
+        if not trg_info[ImageInstanceUID] == ref_info[ImageInstanceUID]:
+            # print("Validation error on {}".format(ImageInstanceUID), file=sys.stderr, flush=True)
+            # print("target crc32c: {}, gcs public crc32c: {}".format(trg_info[ImageInstanceUID],ref_info[ImageInstanceUID]), file=sys.stderr, flush=True)
+            print("\tValidation error on {}".format(ImageInstanceUID), file=sys.stdout, flush=True)
+            print("\ttrg crc32c: {}, ref crc32c: {}".format(trg_info[ImageInstanceUID],ref_info[ImageInstanceUID]), file=sys.stdout, flush=True)
+            # print("Instance count target: {}, reference: {}".format(len(trg_info), len(ref_info)), file=sys.stdout, flush=True)
+            validation['crc32c mismatch'] = 1
+
+    if validation['series content differs'] == 0 and validation['crc32c mismatch'] == 0:
+        validation['validated'] = 1
+    return validation
+
+def download_series_from_TCIA(study, series, validation):
     MAX_RETRIES=3
     compressed = 0
-    uncompressed = 0
+
+    retry = 0
+    while retry < MAX_RETRIES:
+        # Get a zip of the instances in this series to a file and unzip it
+        result = TCIA_API_request_to_file("{}/{}/{}.zip".format(DICOM, study, series),
+                                          "getImage", parameters="SeriesInstanceUID={}".format(series))
+        if result == -1:
+            # print("TCIA getImage failed for {}/{}".format(study,series), file=sys.stderr, flush=True)
+            print("\tTCIA getImage failed for {}/{}".format(study, series), file=sys.stdout, flush=True)
+            validation['series download failed'] = 1
+            return {'returncode': -1, 'compressed': 0, 'validation': validation}
+
+        compressed += os.path.getsize("{}/{}/{}.zip".format(DICOM, study, series))
+
+        try:
+            with zipfile.ZipFile("{}/{}/{}.zip".format(DICOM, study, series)) as zip_ref:
+                zip_ref.extractall("{}/{}/{}".format(DICOM, study, series))
+            if retry > 0:
+                print("\tGot valid zipfile for {}/{} on retry {}".format(study, series, retry), file=sys.stdout,
+                      flush=True)
+            validation['downloaded'] = 1
+            return {'returncode': 0, 'compressed': compressed, 'validation': validation}
+        except zipfile.BadZipFile:
+            # print("Zip extract failed for {}/{}".format(study, series), file=sys.stderr, flush=True)
+            print("\tZip extract failed for {}/{} with error BadZipFile on retry {}".format(study, series, retry),
+                  file=sys.stdout,
+                  flush=True)
+            retry += 1
+        except zipfile.LargeZipFile:
+            # print("Zip extract failed for {}/{}".format(study, series), file=sys.stderr, flush=True)
+            print("\tZip extract failed for {}/{} with error LargeZipFile on retry {}".format(study, series, retry),
+                  file=sys.stdout, flush=True)
+            retry += 1
+        except:
+            # print("Zip extract failed for {}/{}".format(study, series), file=sys.stderr, flush=True)
+            print(
+                "\tZip extract failed for {}/{} with error {},{},{} on retry {}".format(study, series, sys.exc_info()[0],
+                                                                                      sys.exc_info()[1],
+                                                                                      sys.exc_info()[2], retry),
+                file=sys.stdout, flush=True)
+            retry += 1
+
+    if retry == MAX_RETRIES:
+        # zip_path = "{}/{}/{}.zip".format(DICOM, study, series)
+        # bad_zip_blob_name = "gs://{}/badzips/{}/{}.zip".format(target_bucket_name, study, series)
+        # subprocess.run(["gsutil", "-m", "-q", "cp", zip_path, bad_zip_blob_name])
+
+        print("\tFailed to get valid zipfile after {} retries for {}/{}".format(MAX_RETRIES, study, series),
+              file=sys.stdout, flush=True)
+        validation['zip extract failed'] = 1
+        return {'returncode': -1, 'compressed': 0, 'validation': validation}
+
+
+def copy_series(study, series, image_count, target_bucket_name, reference_bucket_name, storage_client, validate):
 
     validation = OrderedDict()
-    validation['downloaded'] = 0              # Have not previously downloaded this series to IDC GCS
-    validation['previously downloaded'] = 0     # THis series already in IDC GCS
-    validation['validated'] = 0                 # Validated this series against the series in CHC GCS
-    validation['collection not in CHC GCS'] = 0 # No validated because CHC GCS does not have this collection
-    validation['series not in chc collection'] = 0     # CHC GCS has this collection but not this series
-    validation['unequal instance counts'] = 0   # Number of instances in IDC GCS unequal to number in CHC GCS
-    validation['crc32c mismatch'] = 0           # crc32c of an instance doesn't match crc32c of CHC GCS instance
+    validation['downloaded'] = 0              # Have not previously downloaded this series to target GCS
+    validation['previously downloaded'] = 0     # This series already in target GCS
+    validation['validated'] = 0                 # Validated this series against the series in reference GCS
+    validation['collection not in reference GCS'] = 0 # No validated because reference GCS does not have this collection
+    validation['series not in reference collection'] = 0     # reference GCS has this collection but not this series
+    validation['unequal instance counts'] = 0   # Number of instances in target GCS unequal to number in reference GCS
+    validation['crc32c mismatch'] = 0           # crc32c of an instance doesn't match crc32c of reference GCS instance
     validation['invalid zip'] = 0               # Number of files in zip file doesn't match getSeries ImageCount
-    validation['series content differs'] = 0    # Download series and CHC GCS have same number of instances but instance UID(s) differs
+    validation['series content differs'] = 0    # Download series and reference GCS have same number of instances but instance UID(s) differs
     validation['series download failed'] = 0    # Download failed after N tries
     validation['GCS upload failed'] = 0         # Upload of series to GCS failed
     validation['zip extract failed'] = 0        # Failed to obtain valid zip file
+    validation['invalid DICOM'] = 0             # File was not valid DICOM format
     validation['other error'] = 0
 
+    # print("copy_series args, study: {}, series: {}, image_count: {}, target_bucket_name: {} reference_bucket_name: {} storage_clients: {}, validate: {}".format(
+    #     study, series, image_count, target_bucket_name, reference_bucket_name, storage_client, validate))
+
+    # Put the downloaded results here
+    os.mkdir("{}/{}/{}".format(DICOM, study, series))
+
     try:
-        idcs = get_idcs(idc_bucket_name, study, series, storage_client)
+
+        trg_info = get_series_info(target_bucket_name, study, series, storage_client)
 
         # If GCS doesn't already have all the instances in a series, get the entire series (again).
-        if not len(idcs) == image_count:
-
-            validation['downloaded'] = 1
-            # We don't have all the images yet
-            os.mkdir("{}/{}/{}".format(DICOM, study, series))
-
-            retry = 0
-            while retry < MAX_RETRIES:
-                # Get a zip of the instances in this series to a file and unzip it
-                result = TCIA_API_request_to_file("{}/{}/{}.zip".format(DICOM, study, series),
-                        "getImage", parameters="SeriesInstanceUID={}".format(series))
-                if result == -1:
-                    # print("TCIA getImage failed for {}/{}".format(study,series), file=sys.stderr, flush=True)
-                    print("TCIA getImage failed for {}/{}".format(study,series), file=sys.stdout, flush=True)
-                    validation['series download failed'] = 1
-                    return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':validation}
-
-                compressed += os.path.getsize("{}/{}/{}.zip".format(DICOM, study, series))
-
-                try:
-                    with zipfile.ZipFile("{}/{}/{}.zip".format(DICOM, study, series)) as zip_ref:
-                        zip_ref.extractall("{}/{}/{}".format(DICOM, study, series))
-                    if retry > 0:
-                        print("Got valid zipfile for {}/{} on retry {}".format(study,series,retry), file=sys.stdout, flush=True)
-                    break
-                except zipfile.BadZipFile:
-                    # print("Zip extract failed for {}/{}".format(study, series), file=sys.stderr, flush=True)
-                    print("Zip extract failed for {}/{} with error BadZipFile on retry {}".format(study, series, retry), file=sys.stdout,
-                          flush=True)
-                    retry += 1
-                except zipfile.LargeZipFile:
-                    # print("Zip extract failed for {}/{}".format(study, series), file=sys.stderr, flush=True)
-                    print("Zip extract failed for {}/{} with error LargeZipFile on retry {}".format(study, series, retry), file=sys.stdout, flush=True)
-                    retry +=1
-                except:
-                    # print("Zip extract failed for {}/{}".format(study, series), file=sys.stderr, flush=True)
-                    print("Zip extract failed for {}/{} with error {},{},{} on retry {}".format(study, series, sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2], retry), file=sys.stdout, flush=True)
-                    retry +=1
-
-            if retry == MAX_RETRIES:
-                # zip_path = "{}/{}/{}.zip".format(DICOM, study, series)
-                # bad_zip_blob_name = "gs://{}/badzips/{}/{}.zip".format(idc_bucket_name, study, series)
-                # subprocess.run(["gsutil", "-m", "-q", "cp", zip_path, bad_zip_blob_name])
-
-                print("Failed to get valid zipfile after {} retries for {}/{}".format(MAX_RETRIES, study, series), file=sys.stdout, flush=True)
-                validation['zip extract failed'] = 1
-                return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':validation}
+        if not len(trg_info) == image_count:
 
 
+            results = download_series_from_TCIA(study, series, validation)
+            # logging.debug('download_series_from_TCIA results: returncode: %s, compressed: %s, validation: %s',
+            #             results['returncode'], results['compressed'], results['validation'] )
+            # print('download_series_from_TCIA results: returncode: {}, compressed: {}, validation: {}'.format(
+            #             results['returncode'], results['compressed'], results['validation'] ))
+            if results['returncode'] == -1:
+                return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':results['validation']}
+            compressed = results['compressed']
 
+            # Get a list of the files from the download
             dcms = [dcm for dcm in os.listdir("{}/{}/{}".format(DICOM, study, series))]
 
             # Ensure that the zip has the expected number of instances
             if not len(dcms) == image_count:
+                print("\tInvalid zip file for {}/{}".format(study,series), file=sys.stdout, flush=True)
                 validation['invalid zip'] = 1
                 return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':validation}
 
+            # logging.debug(("Series download successful"))
+            # print("Series download successful")
+
+            uncompressed = 0
             for dcm in dcms:
                 uncompressed += os.path.getsize("{}/{}/{}/{}".format(DICOM, study,series,dcm))
 
-
-            print("    {}/{}: {} instances".format(study, series, len(os.listdir("{}/{}/{}".format(DICOM, study, series)))), file=sys.stdout, flush=True)
+            # TCIA file names are based on the position of the image in a scan. We need names of the form
+            #   <studyUID>/<seriesUID>/<instanceUID>
+            # So use pydicom to open each file to get its UID and remame it
+            print("{}/{}: {} instances".format(study, series, len(os.listdir("{}/{}/{}".format(DICOM, study, series)))), file=sys.stdout, flush=True)
             # Replace the TCIA assigned file name
-            for dcm in dcms:
-                SOPInstanceUID = pydicom.read_file("{}/{}/{}/{}".format(DICOM, study, series,dcm)).SOPInstanceUID
-                file_name = "{}/{}/{}/{}".format(DICOM, study, series, dcm)
-                blob_name = "{}/{}/{}/{}.dcm".format(DICOM, study, series, SOPInstanceUID)
-                os.renames(file_name, blob_name)
-
-                # Validate the CRC32 of the files against the corresponding Google blob
+            try:
+                for dcm in dcms:
+                    SOPInstanceUID = pydicom.read_file("{}/{}/{}/{}".format(DICOM, study, series,dcm)).SOPInstanceUID
+                    file_name = "{}/{}/{}/{}".format(DICOM, study, series, dcm)
+                    blob_name = "{}/{}/{}/{}.dcm".format(DICOM, study, series, SOPInstanceUID)
+                    os.renames(file_name, blob_name)
+            except pydicom.errors.InvalidDicomError:
+                print("\tInvalid DICOM file for {}/{}".format(study,series), file=sys.stdout, flush=True)
+                validation['invalid DICOM'] = 1
+                return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':validation}
+            # logging.debug(("Renamed all files"))
+            # print("Renamed all files")
 
             # Delete the zip file before we copy to GCS so that it is not copied
             os.remove("{}/{}/{}.zip".format(DICOM, study, series))
@@ -168,38 +220,40 @@ def copy_series(study, series, image_count, idc_bucket_name, chc_bucket_name, st
             try:
                 # Copy the series to GCS
                 src = "{}/{}/{}/*".format(DICOM, study, series)
-                url = "gs://{}/dicom/{}/{}/".format(idc_bucket_name, study, series)
+                url = "gs://{}/dicom/{}/{}/".format(target_bucket_name, study, series)
                 subprocess.run(["gsutil", "-m", "-q", "cp", "-r", src, url])
             except:
                 # print("Upload to GCS failed for {}/{}".format(study,series), file=sys.stderr, flush=True)
-                print("Upload to GCS failed for {}/{}".format(study,series), file=sys.stdout, flush=True)
+                print("\tUpload to GCS failed for {}/{}".format(study,series), file=sys.stdout, flush=True)
                 validation['GCS upload failed'] = 1
                 return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':validation}
+            # logging.debug(("Uploaded instances to GCS"))
+            # print("Uploaded instances to GCS")
 
             if validate:
-                idcs = get_idcs(idc_bucket_name, study, series, storage_client)
-                validated = validate_series(idcs, chc_bucket_name, study, series, storage_client)
-                validation[validated] = 1
+                validation = validate_series(target_bucket_name, reference_bucket_name, study, series, storage_client, validation)
             else:
-                validation['collection not in CHC GCS'] = 1
+                validation['collection not in reference GCS'] = 1
+            # logging.debug(("Validation after download successful"))
+            # print("Validation after download successful")
 
             return {'study':study, 'series':series, 'compressed':compressed, 'uncompressed':uncompressed, 'validation':validation}
 
         else:
-            # We've already downloaded this series, but validate it against Google Healthcare again.
+            # We've already downloaded this series, but validate it against reference bucket again.
             validation['previously downloaded'] = 1
             if validate:
-                idcs = get_idcs(idc_bucket_name, study, series, storage_client)
-                validated = validate_series(idcs, chc_bucket_name, study, series, storage_client)
-                validation[validated] = 1
+                validation = validate_series(target_bucket_name, reference_bucket_name, study, series, storage_client, validation)
             else:
-                validation['collection not in CHC GCS'] = 1
+                validation['collection not in reference GCS'] = 1
+            # logging.debug(("Validation without download successful"))
+            # print("Validation without download successful")
 
             # return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':PREVIOUSLY_DOWNLOADED}
             return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':validation}
     except:
         # print("Unexpected error: {}".format(sys.exc_info()[0]), file=sys.stderr, flush=True)
-        print("Error in copy_series: {},{},{}".format(sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
+        print("\tError in copy_series: {},{},{}".format(sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
         validation['other error'] = 1
         return {'study':study, 'series':series, 'compressed':0, 'uncompressed':0, 'validation':validation}
     finally:
@@ -210,21 +264,24 @@ def copy_series(study, series, image_count, idc_bucket_name, chc_bucket_name, st
 #
 # Function run by worker processes
 #
-
 def worker(input, output, project, validate):
+    # print('worker args, input: {}, output: {}, project: {}, validate: {}'.format(
+    #     input, output, project, validate))
     storage_client = storage.Client(project=project)
     for args in iter(input.get, 'STOP'):
         result = copy_series(*args, storage_client, validate)
         output.put(result)
 
-
         
 def copy_collection(tcia_name, num_processes, storage_client, project):
 
+    # print('copy_collection args, tcia_name: {}, num_processes: {}, storage_client: {}, project: {}'.format(
+    #     tcia_name, num_processes, storage_client, project))
+
     processes = []
     collection_name = tcia_name.replace(' ','_')
-    idc_bucket_name = 'idc-tcia-{}'.format(collection_name.lower().replace('_','-'))
-    chc_bucket_name = idc_bucket_name.replace('idc', 'gcs-public-data--healthcare')
+    target_bucket_name= '{}{}'.format(TRG_PREFIX, collection_name.lower().replace('_','-'))
+    reference_bucket_name = target_bucket_name.replace(TRG_PREFIX, REF_PREFIX)
 
     # Collect statistics on each series
     series_statistics = []
@@ -235,7 +292,7 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
         # Determine if the Google TCIA archive has this collection. If so, validate
         # against it.
         try:
-            validate = storage_client.lookup_bucket(chc_bucket_name) != None
+            validate = storage_client.lookup_bucket(reference_bucket_name) != None
             # except BadRequest:
         except:
             # Get here if there is an error due to "Bucket is requester pays bucket but no user project provided."
@@ -257,8 +314,8 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
             studies = TCIA_API_request('getPatientStudy','Collection={}'.format(collection_name))
             print('{} studies'.format(len(studies)), file=sys.stdout, flush=True)
         except:
-            print('Error getting studies list',file=sys.stdout, flush=True)
-            return(compressed, uncompressed, series_statistics)
+            print('\tError getting studies list',file=sys.stdout, flush=True)
+            return (compressed, uncompressed, series_statistics)
 
         # Make a directory for each study so that we don't have to test for existence later
         for study in studies:
@@ -273,14 +330,14 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
             shuffle(seriess)
         except:
             # print('Error getting studies list', file=sys.stderr, flush=True)
-            print('Error getting studies list', file=sys.stdout, flush=True)
+            print('\tError getting studies list', file=sys.stdout, flush=True)
             return(compressed, uncompressed, series_statistics)
 
 
         if num_processes==0:
             # for series in sorted_seriess:
             for series in seriess:
-                results = copy_series(series['StudyInstanceUID'],series['SeriesInstanceUID'], series['ImageCount'], idc_bucket_name, chc_bucket_name,
+                results = copy_series(series['StudyInstanceUID'],series['SeriesInstanceUID'], series['ImageCount'], target_bucket_name, reference_bucket_name,
                     storage.Client(project=project), validate)
                 compressed += results['compressed']
                 uncompressed += results['uncompressed']
@@ -297,13 +354,16 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
 
             # for series in sorted_seriess:
             for series in seriess:
-                task_queue.put((series['StudyInstanceUID'],series['SeriesInstanceUID'], series['ImageCount'], idc_bucket_name, chc_bucket_name))
+                task_queue.put((series['StudyInstanceUID'],series['SeriesInstanceUID'], series['ImageCount'], target_bucket_name, reference_bucket_name))
                 enqueued_series.append(series['SeriesInstanceUID'])
 
+            # Collect the results for each series
             try:
                 while not enqueued_series == []:
                     # Get results of each series. Timeout if waiting too long
                     results = done_queue.get(10*60)
+                    # logging.debug('In copt_collection, got results %s from copy_series',results)
+                    # print('In copy_collection, got results {} from copy_series'.format(results))
                     enqueued_series.remove(results['series'])
                     compressed += results['compressed']
                     uncompressed += results['uncompressed']
@@ -326,7 +386,7 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
         return(compressed, uncompressed, series_statistics)
     except:
         # print("Unexpected error: {}".format(sys.exc_info()[0]), file=sys.stderr, flush=True)
-        print("Unexpected error in copy_collection. Terminating: {},{},{}".format(sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
+        print("\tUnexpected error in copy_collection. Terminating: {},{},{}".format(sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
         compressed = -1
         uncompressed = -1
         for process in processes:
