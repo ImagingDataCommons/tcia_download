@@ -1,4 +1,7 @@
 #!/usr/bin/env
+
+# Load all collections (buckets) having some bucket name prefix into a DICOM server store
+
 import argparse
 import sys
 import os

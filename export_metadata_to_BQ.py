@@ -1,4 +1,7 @@
 #!/usr/bin/env
+
+# Export metadata from a DICOM store to BQ
+
 import argparse
 import sys
 import os

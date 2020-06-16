@@ -1,4 +1,6 @@
 #!/usr/bin/env
+
+# Load a single collection from GCS into DICOM server
 import argparse
 import sys
 import os

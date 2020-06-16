@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# Build the task.tsv file used by run_tasks.py
+# This is in the format expected by dsub but we don't pass to dsub directly lest it launch too many VMs
+
 import argparse
 
 from helpers.tcia_helpers import get_collection_sizes

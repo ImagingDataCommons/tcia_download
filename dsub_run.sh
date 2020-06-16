@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# This is the "normal" way to run dsub. Use run_tasks.py instead
+
 dsub \
     --provider google-v2 \
     --regions us-central1 \

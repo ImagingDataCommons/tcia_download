@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Run the tcia_cloner docker image locally rather than under dsub
+# Parameterization needs to be updater. See run_tasks.py for current parameterization.
+
 COLLECTION=TCGA-READ
 BUCKET_NAME=tcga-read
 
