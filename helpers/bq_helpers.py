@@ -2,6 +2,8 @@ from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 import io
 import sys
+from multiprocessing import Process, Queue
+
 
 def create_BQ_dataset(client, name, description=""):
 
