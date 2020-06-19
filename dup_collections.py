@@ -6,6 +6,7 @@ import os
 import sys
 import argparse
 from multiprocessing import Process, Queue
+from google.auth import compute_engine
 
 def get_bucket_info(bucket_name, project, storage_client):
     # print('get_series_info args, bucket_name: {}, study: {}, series: {}, storage_client: {}'.format(
@@ -22,20 +23,9 @@ def bucket_was_copied(src_bucket_name, dst_bucket_name, src_project, dst_project
     new_bucket.versioning_enabled = True
     try:
         result = client.create_bucket(new_bucket, location='us')
-        # result = run(['gsutil', 'mb', '-b', 'on', '-p', dst_project, '-l', 'us-central1', 'gs://{}'.format(dst_bucket_name)],
-        #              stdout=PIPE, stderr=PIPE)
-        if result.returncode == '200':
-            # The bucket did not previously exist
-            return(0)
-    # except google.cloud.exceptions.Conflict:
+        return(0)
     except Conflict:
-        # Bucket exists. Check if it is completely copied
-        src_blobs = get_bucket_info(src_bucket_name, src_project, client)
-        dst_blobs = get_bucket_info(dst_bucket_name, dst_project, client)
-        for blob in src_blobs:
-            if (not blob in dst_blobs):
-                # The bucket is not fully populated. Do it again.
-                return(0)
+        # Bucket exists
         return(1)
     except:
         # Bucket creation failed somehow
@@ -44,21 +34,41 @@ def bucket_was_copied(src_bucket_name, dst_bucket_name, src_project, dst_project
 
 
 def copy_bucket(src_bucket_name, dst_bucket_name, src_project, dst_project, storage_client):
+    print("Checking if {} was copied".format(src_bucket_name))
     result = bucket_was_copied(src_bucket_name, dst_bucket_name, src_project, dst_project, storage_client)
     if result == 0:
-        # Not previously (fully) copied
-        print("Copying {}".format(src_bucket_name))
-        result = run(['gsutil', '-m', '-q', 'cp', '-r',
-                'gs://{}'.format(src_bucket_name), 'gs://{}'.format(dst_bucket_name)], stdout=PIPE, stderr=PIPE)
-        print("   {} copied, results: {}".format(dst_bucket_name, result), flush=True)
-        if result.returncode:
-            print('Copy {} failed: {}'.format(result.stderr), flush=True)
+        # Not previously copied
+        print("Copying {}".format(src_bucket_name), flush=True)
+        try:
+            result = run(['gsutil', '-m', '-q', 'cp', '-r',
+                    'gs://{}/*'.format(src_bucket_name), 'gs://{}/'.format(dst_bucket_name)], stdout=PIPE, stderr=PIPE)
+            print("   {} copied, results: {}".format(src_bucket_name, result), flush=True)
+            if result.returncode:
+                print('Copy {} failed: {}'.format(result.stderr), flush=True)
+                return {"bucket": src_bucket_name, "status": -1}
+            return {"bucket": src_bucket_name, "status": 0}
+        except:
+            print("Error in copying {}: {},{},{}".format(src_bucket_name, sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
+            return {"bucket": src_bucket_name, "status": -1}
+
     elif result == 1:
-        print("Previously copied {}".format(dst_bucket_name), flush=True)
-    return dst_bucket_name
+        # Partially copied. Run gsutil cp with the -n no-clobber flag
+        print("Continue copying {}".format(src_bucket_name), flush=True)
+        try:
+            result = run(['gsutil', '-m', '-q', 'cp', '-r', '-n',
+                    'gs://{}/*'.format(src_bucket_name), 'gs://{}/'.format(dst_bucket_name)], stdout=PIPE, stderr=PIPE)
+            print("   {} copied, results: {}".format(src_bucket_name, result), flush=True)
+            if result.returncode:
+                print('Copy {} failed: {}'.format(result.stderr), flush=True)
+                return {"bucket": src_bucket_name, "status": -1}
+            return {"bucket": src_bucket_name, "status": 0}
+        except:
+            print("Error in copying {}: {},{},{}".format(src_bucket_name, sys.exc_info()[0],sys.exc_info()[1],sys.exc_info()[2]), file=sys.stdout, flush=True)
+            return {"bucket": src_bucket_name, "status": -1}
+    else:
+        return {"bucket": src_bucket_name, "status": -1}
 
 
-#
 # Function run by worker processes
 #
 def worker(input, output, project):
@@ -66,7 +76,7 @@ def worker(input, output, project):
     #     input, output, project, validate))
     storage_client = storage.Client(project=project)
     for arguments in iter(input.get, 'STOP'):
-        result = delete_bucket(*arguments, storage_client)
+        result = copy_bucket(*arguments, storage_client)
         output.put(result)
 
 def main(args):
@@ -74,39 +84,57 @@ def main(args):
     # Create queues
     task_queue = Queue()
     done_queue = Queue()
-
     client = storage.Client(project=args.dst_project)
-    result = client.list_buckets(project=args.src_project)
 
-    src_buckets = [bucket.name for bucket in result if args.src_bucket_prefix in bucket.name ]
+    # Get a list of the buckets that have already been duplicated
+    with open('dones.txt') as f:
+        dones = f.readlines()
+    dones = [done.strip('\n') for done in dones]
+
+
+    # Get a list of all the buckets in the src_project
+    result = client.list_buckets(project=args.src_project)
+    src_buckets = [bucket.name for bucket in result if args.src_bucket_prefix in bucket.name]
+
+    # Exclude buckets that have already been duplicated
+    src_buckets = [bucket for bucket in src_buckets if not bucket in dones]
 
     if args.processes == 0:
         for bucket in src_buckets:
             src_bucket_name = bucket
             dst_bucket_name = '{}{}'.format(args.dst_bucket_prefix, src_bucket_name.split(args.src_bucket_prefix)[-1])
             '{}{}'.format(args.dst_bucket_prefix, bucket)
-            dst_bucket_name = 'idc-tcia-rider-phantom-pet-ct'
             result = copy_bucket(src_bucket_name, dst_bucket_name, args.src_project, args.dst_project, client)
+            if result['status'] >=0 :
+                with open("{}/dones.txt".format(os.environ['PWD']), 'a') as f:
+                    f.writelines('{}\n'.format(result['bucket']))
     else:
         # Launch some worker processes
         for process in range(args.processes):
             processes.append(
-                Process(target=worker, args=(task_queue, done_queue, dst_project)))
+                Process(target=worker, args=(task_queue, done_queue, args.dst_project)))
             processes[-1].start()
 
         # Fill the queue:
-        for bucket in buckets:
-            src_bucket_name = '{}{}'.format(args.src_bucket_prefix, bucket.name)
-            dst_bucket_name = '{}{}'.format(args.dst_bucket_prefix, bucket.name)
-            task_queue.put((src_bucket_name, dst_bucket_name, args.project))
+        enqueued_collections = []
+        for bucket in src_buckets:
+            src_bucket_name = bucket
+            dst_bucket_name = '{}{}'.format(args.dst_bucket_prefix, src_bucket_name.split(args.src_bucket_prefix)[-1])
+            '{}{}'.format(args.dst_bucket_prefix, bucket)
+            task_queue.put((src_bucket_name, dst_bucket_name, args.src_project, args.dst_project))
+            enqueued_collections.append(src_bucket_name)
             # task_queue.put(('idc-tcia-rider-phantom-pet-ct',))
 
-        # Get results
-        for process in processes:
-            result=done_queue.get()
-            print("{} deleted".format(result))
+        # Collect results
+        while not enqueued_collections == []:
+            # Get results of each series. Timeout if waiting too long
+            result = done_queue.get()
+            enqueued_collections.remove(result['bucket'])
+            if result['status'] >=0 :
+                with open("{}/dones.txt".format(os.environ['PWD']), 'a') as f:
+                    f.writelines('{}\n'.format(result['bucket']))
 
-        # Tell child processes to stop
+         # Tell child processes to stop
         for process in processes:
             task_queue.put('STOP')
 
@@ -116,14 +144,14 @@ if __name__ == '__main__':
     parser.add_argument('--src_bucket_prefix', default='idc-tcia-1-')
     parser.add_argument('--dst_bucket_prefix', default='idc-tcia-')
     parser.add_argument('--src_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='idc-dev-etl')
-    # parser.add_argument('--dst_project', default='canceridc-data')
-    parser.add_argument('--processes', default=0)
+#    parser.add_argument('--dst_project', default='idc-dev-etl')
+    parser.add_argument('--dst_project', default='canceridc-data')
+    parser.add_argument('--processes', default=4)
     parser.add_argument('--SA', '-a',
             default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
 
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
+    # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
 
     main(args)

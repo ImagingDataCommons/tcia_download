@@ -88,6 +88,11 @@ def main(args):
 
 if __name__ == "__main__":
 #    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+    print(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], file=sys.stderr, flush=True)
+    with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
+        for line in f:
+            print(line, file=sys.stderr, flush=True)
+
     parser =argparse.ArgumentParser()
     parser.add_argument('--collection','-c', help='Collection name as returned by TCIA /query/getCollectionValues API')
     parser.add_argument('--processes','-p', type=int, default=4, help='Number of worker processes')
