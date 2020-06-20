@@ -34,7 +34,7 @@ def bucket_was_copied(src_bucket_name, dst_bucket_name, src_project, dst_project
 
 
 def copy_bucket(src_bucket_name, dst_bucket_name, src_project, dst_project, storage_client):
-    print("Checking if {} was copied".format(src_bucket_name))
+    # print("Checking if {} was copied".format(src_bucket_name))
     result = bucket_was_copied(src_bucket_name, dst_bucket_name, src_project, dst_project, storage_client)
     if result == 0:
         # Not previously copied

@@ -116,8 +116,11 @@ def get_TCIA_series_per_study(collection, patient, study):
     
     return SeriesInstanceUIDs
 
-# print(get_TCIA_series_per_study('TCGA-READ','TCGA-BM-6198', '1.3.6.1.4.1.14519.5.2.1.8421.4018.304030957341830836628192929917'))
+def get_TCIA_series_per_collection(collection):
+    results = TCIA_API_request('getSeries')
+    SeriesInstanceUIDs = [SeriesInstanceUID['SeriesInstanceUID'] for SeriesInstanceUID in results]
 
+    return SeriesInstanceUIDs
 
 def get_TCIA_series():
     results = TCIA_API_request('getSeries')
