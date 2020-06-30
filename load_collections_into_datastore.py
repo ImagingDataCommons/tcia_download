@@ -6,11 +6,10 @@ import argparse
 import sys
 import os
 import json
+from time import sleep
 from googleapiclient.errors import HttpError
 from google.cloud import storage
-from helpers.dicomweb_helpers import get_session
-from helpers.gch_helpers import get_dataset
-from helpers.dicom_helpers import get_dicom_store, create_dicom_store, import_dicom_instance
+from helpers.dicom_helpers import get_dataset, get_dataset_operation, create_dataset, get_dicom_store, create_dicom_store, import_dicom_instance
 
 
 def get_storage_client(project):
@@ -18,50 +17,88 @@ def get_storage_client(project):
     return storage_client
 
 
-def get_buckets(args):
-    storage_client = get_storage_client(args.project)
-    buckets = [bucket for bucket in storage_client.list_buckets(prefix=args.bucket_prefix, project=args.project)]
-    buckets = [bucket for bucket in buckets if not '{}1'.format(args.bucket_prefix) in bucket.name]
+# Get a list of buckets to be loaded
+def get_buckets(args, storage_client):
+    if args.collections == "all":
+        storage_client = get_storage_client(args.project)
+        buckets = [bucket for bucket in storage_client.list_buckets(prefix=args.bucket_prefix, project=args.project)]
+        buckets = [bucket.name for bucket in buckets if not '{}1'.format(args.bucket_prefix) in bucket.name]
+    else:
+        with open(args.collections) as f:
+            buckets = f.readlines()
+        buckets = ['idc-tcia-{}'.format(bucket.strip('\n').lower().replace(' ','-').replace('_','-')) for bucket in buckets if not "#" in bucket]
     return buckets
 
 
-def dicomweb_search_instance(args, blob, SOPInstanceUID):
+# def wait_done(args, client):
+#     while True:
+#         with open(args.log) as f:
+#             stats = json.load(f)
+#         all_done = True
+#         for bucket in stats:
+#             if not 'done' in stats[bucket]:
+#                 operation = stats[bucket]['name'].split('/')[-1]
+#                 result = get_dataset_operation(args.project, args.region, args.dataset_name, operation)
+#                 stats[bucket] = result
+#                 all_done = False
+#             print("{}: {}".format(bucket, stats[bucket]))
+#         with open(args.log, 'w') as f:
+#             json.dump(stats, f)
+#         print("-------------------------------------")
+#
+#         if all_done:
+#             break
+#         sleep(args.period)
 
-    """Handles the GET requests specified in the DICOMweb standard."""
-    url = "https://healthcare.googleapis.com/v1/projects/{}/locations/{}".format(args.project, args.region)
+def wait_done(bucket, response, args, client):
+    operation = response['name'].split('/')[-1]
+    while True:
+        result = get_dataset_operation(args.project, args.region, args.dataset_name, operation)
+        print("{}: {}".format(bucket, result))
 
-    dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/instances?SOPInstanceUID={}".format(
-        url, args.dataset_name, args.datastore_name, SOPInstanceUID
-    )
+        if 'done' in result:
+            break
+        sleep(args.period)
 
-    headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
-
-    session = get_session()
-
-    response = session.get(dicomweb_path, headers=headers)
-    response.raise_for_status()
-
-    instance = response.json()
-
-    if not len(instance) == 1:
-        print('{}/{} not in DICOMweb store'.format(blob.bucket,blob.path))
-    # print("Instance:")
-    # print(json.dumps(instance, indent=2))
+    print("-------------------------------------")
+    with open(args.log, 'a') as f:
+        json.dump({bucket: result}, f)
+        print('\n',file=f)
 
 
-def validate_import(args, bucket):
-    blobs = [blob for blob in bucket.list_blobs()]
-    for blob in blobs:
-        SOPInstanceUID = blob.name.split('/')[-1].split('.dcm')[0]
-        dicomweb_search_instance(args, blob, SOPInstanceUID)
+
+# Start a load operation on some buckets
+def start_load(args, client):
+    try:
+        with open(args.log) as f:
+            stats = json.load(f)
+    except:
+        stats = {}
+    buckets = get_buckets(args, client)
+    for bucket in buckets:
+        content_uri = '{}/dicom/*/*/*.dcm'.format(bucket)
+        try:
+            response=import_dicom_instance( args.project, args.region, args.dataset_name, args.datastore_name, content_uri)
+            print('Imported {}'.format(bucket))
+        except HttpError as e:
+            err=json.loads(e.content)
+            print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'], err['error']['message']))
+        # stats[bucket]=response
+        #
+        # with open(args.log,'w') as f:
+        #     json.dump(stats, f)
+        #
+        wait_done(bucket, response, args, client)
+
+
 
 
 def main(args):
+    client = get_storage_client(args.project)
     try:
-        dataset = get_dataset(args.SA, args.project, args.region, args.dataset_name)
+        dataset = get_dataset(args.project, args.region, args.dataset_name)
     except HttpError:
-        print("Can't access dataset")
-        exit(-1)
+        response = create_dataset(args.project, args.region, args.dataset_name)
 
     try:
         datastore = get_dicom_store(args.project, args.region, args.dataset_name, args.datastore_name)
@@ -70,27 +107,24 @@ def main(args):
         datastore = create_dicom_store(args.project, args.region, args.dataset_name, args.datastore_name)
     pass
 
-    buckets = get_buckets(args)
-    for bucket in buckets:
-        content_uri = '{}/dicom/*/*/*.dcm'.format(bucket.name)
-        try:
-            response=import_dicom_instance( args.project, args.region, args.dataset_name, args.datastore_name, content_uri)
-            # result = validate_import(args, bucket)
-            print('Imported {}'.format(bucket))
-        except HttpError as e:
-            err=json.loads(e.content)
-            print('Error loading {}; code: {}, message: {}'.format(bucket.name, err['error']['code'], err['error']['message']))
+    start_load(args, client)
 
 if __name__ == '__main__':
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/Users/BillClifford/.config/gcloud/application_default_config.json'
     parser =argparse.ArgumentParser()
     parser.add_argument('--bucket_prefix', default='idc-tcia-')
-    parser.add_argument('--dataset_name', '-d', default='idc-tcia', help='Dataset name')
-    parser.add_argument('--region', '-r', default='us-central1', help='Dataset region')
-    parser.add_argument('--datastore_name', '-s', default='idc-tcia', help='Datastore name')
-    parser.add_argument('--project', '-p', default='idc-dev-etl')
-    parser.add_argument('--SA', '-a',
-            default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
+    parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'],'lists/idc_mvp_wave_0.txt'), help='Collections to import into DICOM store')
+    # parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'],'lists/one_collection.txt'), help='Collections to import into DICOM store')
+    parser.add_argument('--region', default='us', help='Dataset region')
+    parser.add_argument('--dataset_name', default='idc_tcia', help='Dataset name')
+    parser.add_argument('--datastore_name', default='idc_tcia_mvp_wave0', help='Datastore name')
+    parser.add_argument('--project', default='canceridc-data')
+    parser.add_argument('--log', default='{}/{}'.format(os.environ['PWD'],'logs/load_dicom_store.log'))
+    parser.add_argument('--period', default=30, help="seconds to sleep between checking operation status")
+    # parser.add_argument('--SA', '-a',
+    #         default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
+    parser.add_argument('--SA', default = '', help='Path to service accoumt key')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
+    if not args.SA == '':
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
     main(args)

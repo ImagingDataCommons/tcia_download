@@ -12,17 +12,16 @@ import time
 from subprocess import PIPE
 from googleapiclient.errors import HttpError
 
-from helpers.gch_helpers import get_dataset
-from helpers.dicom_helpers import get_dicom_store, create_dicom_store, import_dicom_instance
+from helpers.dicom_helpers import get_dataset, get_dicom_store, create_dicom_store, import_dicom_instance
 
 def export_dicom_metadata(args):
     """Export data to a Google Cloud Storage bucket by copying
     it from the DICOM store."""
     # client = get_client()
     # dicom_store_parent = "projects/{}/locations/{}/datasets/{}".format(
-    #     args.project, args.region, args.dataset_name
+    #     args.project, args.region, args.dcmdataset_name
     # )
-    # dicom_store_name = "{}/dicomStores/{}".format(args.dicom_store_parent, args.datastore_name)
+    # dicom_store_name = "{}/dicomStores/{}".format(args.dicom_store_parent, args.dcmdatastore_name)
     #
     # body = {"BigQueryDestination": {"tableURI": "gs://{}".format(table_uri), "force": False}}
     #
@@ -34,20 +33,23 @@ def export_dicom_metadata(args):
         '-H', '"Content-Type: application/json; charset=utf-8"',
         '--data', '"' + "{{'bigqueryDestination': {{'tableUri': 'bq://{}.{}.{}'}}}}".format(args.project, args.bqdataset, args.bqtable) +'"',
         "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/dicomStores/{}:export".format(
-            args.project, args.region,args.dataset_name, args.datastore_name)
+            args.project, args.region,args.dcmdataset_name, args.dcmdatastore_name)
         ]
 
     results = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
 
     operation_id = json.loads(str(results.stdout,encoding='utf-8'))['name'].split('/')[-1]
 
-    cmd = ['curl', '-X', 'GET',
-        '-H', '"' + 'Authorization: Bearer {}'.format(bearer) + '"',
-        "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/operations/{}".format(
-            args.project, args.region,args.dataset_name, operation_id)
-        ]
-
     while True:
+        results = subprocess.run(['gcloud', 'auth', 'application-default', 'print-access-token'], stdout=PIPE,
+                                 stderr=PIPE)
+        bearer = str(results.stdout, encoding='utf-8').strip()
+        cmd = ['curl', '-X', 'GET',
+               '-H', '"' + 'Authorization: Bearer {}'.format(bearer) + '"',
+               "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/operations/{}".format(
+                   args.project, args.region, args.dcmdataset_name, operation_id)
+               ]
+
         results = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
         details = json.loads(str(results.stdout,encoding='utf-8'))
 
@@ -62,18 +64,18 @@ def export_dicom_metadata(args):
 
 
 def main(args):
-    try:
-        dataset = get_dataset(args.SA, args.project, args.region, args.dataset_name)
-    except HttpError:
-        print("Can't access dataset")
-        exit(-1)
-
-    try:
-        datastore = get_dicom_store(args.project, args.region, args.dataset_name, args.datastore_name)
-    except HttpError:
-        # Datastore doesn't exist. Create it
-        datastore = create_dicom_store(args.project, args.region, args.dataset_name, args.datastore_name)
-    pass
+    # try:
+    #     dataset = get_dataset(args.SA, args.project, args.region, args.dcmdataset_name)
+    # except HttpError:
+    #     print("Can't access dataset")
+    #     exit(-1)
+    #
+    # try:
+    #     datastore = get_dicom_store(args.project, args.region, args.dcmdataset_name, args.dcmdatastore_name)
+    # except HttpError:
+    #     # Datastore doesn't exist. Create it
+    #     datastore = create_dicom_store(args.project, args.region, args.dcmdataset_name, args.dcmdatastore_name)
+    # pass
 
     try:
         start = time.time()
@@ -87,16 +89,18 @@ def main(args):
 
 
 if __name__ == '__main__':
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/Users/BillClifford/.config/gcloud/application_default_config.json'
     parser =argparse.ArgumentParser()
-    parser.add_argument('--region', '-r', default='us-central1', help='Dataset region')
-    parser.add_argument('--project', '-p', default='idc-dev-etl')
-    parser.add_argument('--dataset_name', '-d', default='idc-tcia', help='DICOM dataset name')
-    parser.add_argument('--datastore_name', '-s', default='idc-tcia', help='DICOM datastore name')
+    parser.add_argument('--region', '-r', default='us', help='Dataset region')
+    parser.add_argument('--project', '-p', default='canceridc-data')
+    parser.add_argument('--dcmdataset_name', '-d', default='idc_tcia', help='DICOM dataset name')
+    parser.add_argument('--dcmdatastore_name', '-s', default='idc_tcia_mvp_wave0', help='DICOM datastore name')
     parser.add_argument('--bqdataset', default='idc_tcia', help="BQ dataset name")
-    parser.add_argument('--bqtable', default='idc_tcia', help="BQ table name")
-    parser.add_argument('--SA', '-a',
-            default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
+    parser.add_argument('--bqtable', default='idc_tcia_dicom_metadata_mvp_wave0', help="BQ table name")
+    # parser.add_argument('--SA', '-a',
+    #         default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
+    parser.add_argument('--SA', default='', help='Path to service accoumt key')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
+    if not args.SA == '':
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
     main(args)

@@ -2,7 +2,6 @@ from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 import io
 import sys
-from multiprocessing import Process, Queue
 
 
 def create_BQ_dataset(client, name, description=""):
@@ -93,10 +92,8 @@ def load_BQ_from_json(client, dataset, table, json_rows, aschema):
     # Convert to
     data = io.StringIO(json_rows)
     #     print(json_rows)
-    job = client.load_table_from_file(data, table_id, job_config=job_config)
-
     try:
-        result = job.result()
+        job = client.load_table_from_file(data, table_id, job_config=job_config)
     except:
         print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)

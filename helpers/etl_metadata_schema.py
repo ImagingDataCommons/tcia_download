@@ -1,17 +1,12 @@
+# This is the schema for the idc_tcia_DICOM_metadata BQ table
 from google.cloud import bigquery
 
 etl_metadata_schema = [
     bigquery.SchemaField("SOPInstanceUID", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("TCIA_CollectionID", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("IDC_CollectionID", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("GCS_URL", "STRING", mode="REQUIRED"),
 
-    bigquery.SchemaField("GCS_URLs", "RECORD", mode="REQUIRED",
-        fields=[
-            bigquery.SchemaField("StudyInstanceUID", "STRING", mode="REQUIRED"),
-            bigquery.SchemaField("SeriesInstanceUID", "STRING", mode="REQUIRED"),
-            bigquery.SchemaField("SOPInstanceUID", "STRING", mode="REQUIRED"),
-        ]
-    ),
     bigquery.SchemaField("DICOM_STORE_URLs", "RECORD", mode="REQUIRED",
         fields=[
             bigquery.SchemaField("StudyInstanceUID", "STRING", mode="REQUIRED"),

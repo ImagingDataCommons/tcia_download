@@ -28,9 +28,62 @@ def get_client():
     service_name = "healthcare"
 
     return discovery.build(service_name, api_version)
-
-
 # [END healthcare_get_client]
+
+def get_dataset_operation(
+        project_id,
+        cloud_region,
+        dataset_id,
+        operation):
+    client = get_client()
+    op_parent = "projects/{}/locations/{}/datasets/{}".format(project_id, cloud_region, dataset_id)
+    op_name = "{}/operations/{}".format(op_parent, operation)
+    request = client.projects().locations().datasets().operations().get(name=op_name)
+    response = request.execute()
+    return response
+
+# [START healthcare_get_dataset]
+def get_dataset(
+        project_id,
+        cloud_region,
+        dataset_id):
+    """Gets any metadata associated with a dataset."""
+    client = get_client()
+    dataset_name = 'projects/{}/locations/{}/datasets/{}'.format(
+        project_id, cloud_region, dataset_id)
+
+    datasets = client.projects().locations().datasets()
+    dataset = datasets.get(name=dataset_name).execute()
+
+    print('Name: {}'.format(dataset.get('name')))
+    print('Time zone: {}'.format(dataset.get('timeZone')))
+
+    return dataset
+# [END healthcare_get_dataset]
+
+
+def create_dataset(
+        project_id,
+        cloud_region,
+        dataset_id):
+    """Creates a dataset."""
+    client = get_client()
+    dataset_parent = 'projects/{}/locations/{}'.format(
+        project_id, cloud_region)
+
+    body = {}
+
+    request = client.projects().locations().datasets().create(
+        parent=dataset_parent, body=body, datasetId=dataset_id)
+
+    try:
+        response = request.execute()
+        print('Created dataset: {}'.format(dataset_id))
+        return response
+    except HttpError as e:
+        print('Error, dataset not created: {}'.format(e))
+        return ""
+
 
 
 # [START healthcare_create_dicom_store]
