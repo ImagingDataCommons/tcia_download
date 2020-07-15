@@ -1,6 +1,7 @@
 # tcia_download
 Download TCIA collections to GCS
 
+-Run 
 -dsub_run.sh initiates dsub execution, driven by the tasks in task.tsv
 
 -clone_collection.py does any cleanup necessary from previous runs, then calls helpers/cloner.py/copy_collection()

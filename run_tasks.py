@@ -102,8 +102,10 @@ def main(args):
         current_time = time.strftime("%y%m%d-%H%M%S")
         bucket_name = tasks[task].split('\t')[0].lower().replace(' ','-')
 #        series_statistics = "{}.{}.log".format(tasks[task].split('\t')[1].split('.')[0], current_time)
-        series_statistics = "gs://idc-logs/{}/app/{}/series_statistics.{}.log".format(args.version,bucket_name, current_time)
-        logging = "gs://idc-logs/{}/dsub/{}".format(args.version,bucket_name)
+#         series_statistics = "gs://idc-logs/{}/app/{}/series_statistics.{}.log".format(args.version,bucket_name, current_time)
+        series_statistics = "gs://idc-etl-processing-dsub-logs/{}/app/{}/series_statistics.{}.log".format(args.version,bucket_name, current_time)
+        # logging = "gs://idc-logs/{}/dsub/{}".format(args.version,bucket_name)
+        logging = "gs://idc-etl-processing-dsub-logs/{}/dsub/{}".format(args.version, bucket_name)
 #        output_file = "{}.{}.log".format(tasks[task].split('\t')[2].split('.')[0], current_time)
         dsub_dict = [
             '/Users/BillClifford/git-home/tcia_download/env/bin/dsub',
@@ -111,10 +113,10 @@ def main(args):
             '--machine-type', 'n2-standard-2',
             '--ssh',
             '--regions', 'us-central1',
-            '--project', 'idc-dev-etl',
+            '--project', 'idc-etl-processing',
             '--logging', logging,
-            '--image', 'gcr.io/idc-dev-etl/tcia_cloner',
-            '--mount', 'CLONE_TCIA={}'.format('gs://idc-dsub-clone-tcia'),
+            '--image', 'gcr.io/idc-etl-processing/tcia_cloner',
+            '--mount', 'CLONE_TCIA={}'.format('gs://idc-dsub-mount'),
             '--env', 'TCIA_NAME="{}"'.format(tasks[task].split('\t')[0]),
             '--env', 'REF_PREFIX="{}"'.format(args.ref),
             '--env', 'TRG_PREFIX="{}"'.format(args.trg),
@@ -124,6 +126,7 @@ def main(args):
 
         #       print(dsub_dict)
         dsub_string = ' '.join(dsub_dict)
+        print('dsub_string: {}'.format(dsub_string))
 
  #       print(dsub_string)
  #       print(shlex.split(dsub_string))
@@ -166,7 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('--trg', '-t', default='idc-tcia-1-', help='Prefix of target collection buckets, buckets being newly populated')
     parser.add_argument('--version', '-v', default='1', help='Version of target data set')
     parser.add_argument('--file', '-f', default='tasks.tsv')
-    parser.add_argument('--project', default='idc-dev-etl')
+    parser.add_argument('--project', default='idc-etl-processing')
     args = parser.parse_args()
     print(args)
     main(args)

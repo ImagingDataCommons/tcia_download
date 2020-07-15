@@ -24,12 +24,23 @@ TRG_PREFIX = os.environ['TRG_PREFIX']
 
 # Get information from GCS about the blobs in a series
 def get_series_info(bucket_name, study, series, storage_client):
-    # print('get_series_info args, bucket_name: {}, study: {}, series: {}, storage_client: {}'.format(
-    #     bucket_name, study, series, storage_client
-    # ))
-    blobs = storage_client.bucket(bucket_name, user_project=PROJECT).list_blobs(
-        prefix="dicom/{}/{}/".format(study, series))
-    series_info = {blob.name: blob.crc32c for blob in blobs}
+    print('get_series_info args, bucket_name: {}, study: {}, series: {}, project: {}, storage_client: {}'.format(
+        bucket_name, study, series, PROJECT, storage_client
+    ))
+    try:
+        blobs = storage_client.bucket(bucket_name, user_project=PROJECT).list_blobs(
+            prefix="dicom/{}/{}/".format(study, series))
+        print('Got series info args, bucket_name: {}, study: {}, series: {}, project: {}, storage_client: {}'.format(
+            bucket_name, study, series, PROJECT, storage_client
+        ))
+        series_info = {blob.name: blob.crc32c for blob in blobs}
+        print('Generated series_info')
+    except:
+        print("\tError in get_series_info: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+              file=sys.stdout, flush=True)
+        print('blobs: {}'.format(blobs))
+        print('Could not get series info')
+        series_info = {}
     return series_info
 
 
@@ -43,7 +54,7 @@ def validate_series(target_bucket_name, reference_bucket_name, study, series, st
     ref_info = get_series_info(reference_bucket_name, study, series, storage_client)
 
     if len(ref_info) == 0:
-        print("\talidation error on {}".format("dicom/{}/{}".format(study,series)), file=sys.stdout, flush=True)
+        print("\tValidation error on {}".format("dicom/{}/{}".format(study,series)), file=sys.stdout, flush=True)
         print("\tSeries {} not in reference collection".format("dicom/{}/{}".format(study,series)), file=sys.stdout, flush=True)
         validation['series not in reference collection'] = 1
         return validation
@@ -289,7 +300,7 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
     uncompressed = 0
 
     try:
-        # Determine if the Google TCIA archive has this collection. If so, validate
+        # Determine if the reference archive has this collection. If so, validate
         # against it.
         try:
             validate = storage_client.lookup_bucket(reference_bucket_name) != None

@@ -88,7 +88,7 @@ def main(args):
 
 if __name__ == "__main__":
 #    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-    print(os.environ['GOOGLE_APPLICATION_CREDENTIALS'], file=sys.stderr, flush=True)
+    print('GOOGLE_APPLICATION_CREDENTIALS: {}'.format(os.environ['GOOGLE_APPLICATION_CREDENTIALS']), file=sys.stderr, flush=True)
     with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
         for line in f:
             print(line, file=sys.stderr, flush=True)

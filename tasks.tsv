@@ -1,5 +1,6 @@
 --env TCIA_NAME	--output SERIES_STATISTICS	--output OUTPUT_FILE
 GBM-DSC-MRI-DRO	gs://idc-dsub-logs/output/gbm-dsc-mri-dro/series_statistics.log	gs://idc-dsub-logs/output/gbm-dsc-mri-dro/stdout.log
+COVID-19	gs://idc-dsub-logs/output/covid-19/series_statistics.log	gs://idc-dsub-logs/output/covid-19/stdout.log
 Lung Phantom	gs://idc-dsub-logs/output/lung-phantom/series_statistics.log	gs://idc-dsub-logs/output/lung-phantom/stdout.log
 Prostate-3T	gs://idc-dsub-logs/output/prostate-3t/series_statistics.log	gs://idc-dsub-logs/output/prostate-3t/stdout.log
 TCGA-READ	gs://idc-dsub-logs/output/tcga-read/series_statistics.log	gs://idc-dsub-logs/output/tcga-read/stdout.log
@@ -36,15 +37,15 @@ Pancreas-CT	gs://idc-dsub-logs/output/pancreas-ct/series_statistics.log	gs://idc
 TCGA-ESCA	gs://idc-dsub-logs/output/tcga-esca/series_statistics.log	gs://idc-dsub-logs/output/tcga-esca/stdout.log
 PROSTATE-MRI	gs://idc-dsub-logs/output/prostate-mri/series_statistics.log	gs://idc-dsub-logs/output/prostate-mri/stdout.log
 SPIE-AAPM Lung CT Challenge	gs://idc-dsub-logs/output/spie-aapm-lung-ct-challenge/series_statistics.log	gs://idc-dsub-logs/output/spie-aapm-lung-ct-challenge/stdout.log
-CPTAC-CM	gs://idc-dsub-logs/output/cptac-cm/series_statistics.log	gs://idc-dsub-logs/output/cptac-cm/stdout.log
 Mouse-Mammary	gs://idc-dsub-logs/output/mouse-mammary/series_statistics.log	gs://idc-dsub-logs/output/mouse-mammary/stdout.log
 CC-Radiomics-Phantom-3	gs://idc-dsub-logs/output/cc-radiomics-phantom-3/series_statistics.log	gs://idc-dsub-logs/output/cc-radiomics-phantom-3/stdout.log
 TCGA-KIRP	gs://idc-dsub-logs/output/tcga-kirp/series_statistics.log	gs://idc-dsub-logs/output/tcga-kirp/stdout.log
 HEAD-NECK-RADIOMICS-HN1	gs://idc-dsub-logs/output/head-neck-radiomics-hn1/series_statistics.log	gs://idc-dsub-logs/output/head-neck-radiomics-hn1/stdout.log
 CPTAC-SAR	gs://idc-dsub-logs/output/cptac-sar/series_statistics.log	gs://idc-dsub-logs/output/cptac-sar/stdout.log
+COVID-19-AR	gs://idc-dsub-logs/output/covid-19-ar/series_statistics.log	gs://idc-dsub-logs/output/covid-19-ar/stdout.log
+CPTAC-CM	gs://idc-dsub-logs/output/cptac-cm/series_statistics.log	gs://idc-dsub-logs/output/cptac-cm/stdout.log
 Prostate Fused-MRI-Pathology	gs://idc-dsub-logs/output/prostate-fused-mri-pathology/series_statistics.log	gs://idc-dsub-logs/output/prostate-fused-mri-pathology/stdout.log
 PROSTATE-DIAGNOSIS	gs://idc-dsub-logs/output/prostate-diagnosis/series_statistics.log	gs://idc-dsub-logs/output/prostate-diagnosis/stdout.log
-CPTAC-LSCC	gs://idc-dsub-logs/output/cptac-lscc/series_statistics.log	gs://idc-dsub-logs/output/cptac-lscc/stdout.log
 TCGA-LUSC	gs://idc-dsub-logs/output/tcga-lusc/series_statistics.log	gs://idc-dsub-logs/output/tcga-lusc/stdout.log
 Mouse-Astrocytoma	gs://idc-dsub-logs/output/mouse-astrocytoma/series_statistics.log	gs://idc-dsub-logs/output/mouse-astrocytoma/stdout.log
 Soft-tissue-Sarcoma	gs://idc-dsub-logs/output/soft-tissue-sarcoma/series_statistics.log	gs://idc-dsub-logs/output/soft-tissue-sarcoma/stdout.log
@@ -52,16 +53,18 @@ CPTAC-LUAD	gs://idc-dsub-logs/output/cptac-luad/series_statistics.log	gs://idc-d
 TCGA-STAD	gs://idc-dsub-logs/output/tcga-stad/series_statistics.log	gs://idc-dsub-logs/output/tcga-stad/stdout.log
 TCGA-LUAD	gs://idc-dsub-logs/output/tcga-luad/series_statistics.log	gs://idc-dsub-logs/output/tcga-luad/stdout.log
 NSCLC-Radiomics	gs://idc-dsub-logs/output/nsclc-radiomics/series_statistics.log	gs://idc-dsub-logs/output/nsclc-radiomics/stdout.log
+CPTAC-LSCC	gs://idc-dsub-logs/output/cptac-lscc/series_statistics.log	gs://idc-dsub-logs/output/cptac-lscc/stdout.log
 TCGA-OV	gs://idc-dsub-logs/output/tcga-ov/series_statistics.log	gs://idc-dsub-logs/output/tcga-ov/stdout.log
 CC-Radiomics-Phantom-2	gs://idc-dsub-logs/output/cc-radiomics-phantom-2/series_statistics.log	gs://idc-dsub-logs/output/cc-radiomics-phantom-2/stdout.log
+Prostate-MRI-US-Biopsy	gs://idc-dsub-logs/output/prostate-mri-us-biopsy/series_statistics.log	gs://idc-dsub-logs/output/prostate-mri-us-biopsy/stdout.log
 NaF PROSTATE	gs://idc-dsub-logs/output/naf-prostate/series_statistics.log	gs://idc-dsub-logs/output/naf-prostate/stdout.log
 QIBA CT-1C	gs://idc-dsub-logs/output/qiba-ct-1c/series_statistics.log	gs://idc-dsub-logs/output/qiba-ct-1c/stdout.log
 RIDER NEURO MRI	gs://idc-dsub-logs/output/rider-neuro-mri/series_statistics.log	gs://idc-dsub-logs/output/rider-neuro-mri/stdout.log
 C4KC-KiTS	gs://idc-dsub-logs/output/c4kc-kits/series_statistics.log	gs://idc-dsub-logs/output/c4kc-kits/stdout.log
 CPTAC-PDA	gs://idc-dsub-logs/output/cptac-pda/series_statistics.log	gs://idc-dsub-logs/output/cptac-pda/stdout.log
 TCGA-UCEC	gs://idc-dsub-logs/output/tcga-ucec/series_statistics.log	gs://idc-dsub-logs/output/tcga-ucec/stdout.log
-CPTAC-HNSCC	gs://idc-dsub-logs/output/cptac-hnscc/series_statistics.log	gs://idc-dsub-logs/output/cptac-hnscc/stdout.log
 CPTAC-CCRCC	gs://idc-dsub-logs/output/cptac-ccrcc/series_statistics.log	gs://idc-dsub-logs/output/cptac-ccrcc/stdout.log
+CPTAC-HNSCC	gs://idc-dsub-logs/output/cptac-hnscc/series_statistics.log	gs://idc-dsub-logs/output/cptac-hnscc/stdout.log
 Breast-MRI-NACT-Pilot	gs://idc-dsub-logs/output/breast-mri-nact-pilot/series_statistics.log	gs://idc-dsub-logs/output/breast-mri-nact-pilot/stdout.log
 QIN-BREAST	gs://idc-dsub-logs/output/qin-breast/series_statistics.log	gs://idc-dsub-logs/output/qin-breast/stdout.log
 BREAST-DIAGNOSIS	gs://idc-dsub-logs/output/breast-diagnosis/series_statistics.log	gs://idc-dsub-logs/output/breast-diagnosis/stdout.log
@@ -77,6 +80,7 @@ CPTAC-UCEC	gs://idc-dsub-logs/output/cptac-ucec/series_statistics.log	gs://idc-d
 CPTAC-GBM	gs://idc-dsub-logs/output/cptac-gbm/series_statistics.log	gs://idc-dsub-logs/output/cptac-gbm/stdout.log
 TCGA-KIRC	gs://idc-dsub-logs/output/tcga-kirc/series_statistics.log	gs://idc-dsub-logs/output/tcga-kirc/stdout.log
 Head-Neck Cetuximab	gs://idc-dsub-logs/output/head-neck-cetuximab/series_statistics.log	gs://idc-dsub-logs/output/head-neck-cetuximab/stdout.log
+Lung-PET-CT-Dx	gs://idc-dsub-logs/output/lung-pet-ct-dx/series_statistics.log	gs://idc-dsub-logs/output/lung-pet-ct-dx/stdout.log
 VICTRE	gs://idc-dsub-logs/output/victre/series_statistics.log	gs://idc-dsub-logs/output/victre/stdout.log
 QIN Breast DCE-MRI	gs://idc-dsub-logs/output/qin-breast-dce-mri/series_statistics.log	gs://idc-dsub-logs/output/qin-breast-dce-mri/stdout.log
 TCGA-BRCA	gs://idc-dsub-logs/output/tcga-brca/series_statistics.log	gs://idc-dsub-logs/output/tcga-brca/stdout.log
