@@ -108,7 +108,8 @@ def main(args):
         logging = "gs://idc-etl-processing-dsub-logs/{}/dsub/{}".format(args.version, bucket_name)
 #        output_file = "{}.{}.log".format(tasks[task].split('\t')[2].split('.')[0], current_time)
         dsub_dict = [
-            '/Users/BillClifford/git-home/tcia_download/env/bin/dsub',
+            'python',
+            '{}/env/bin/dsub'.format(os.getcwd()),
             '--provider', 'google-v2',
             '--machine-type', 'n2-standard-2',
             '--ssh',
