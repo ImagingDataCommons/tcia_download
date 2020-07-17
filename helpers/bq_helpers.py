@@ -41,8 +41,8 @@ def delete_BQ_dataset(client, name):
 # print("Deleted dataset '{}'.".format(dataset_id))
 
 
-def BQ_table_exists(BQ_client, dataset, table):
-    table_id = "{}.{}.{}".format(BQ_client.project, dataset, table)
+def BQ_table_exists(BQ_client, project, dataset, table):
+    table_id = "{}.{}.{}".format(project, dataset, table)
 
     try:
         BQ_client.get_table(table_id)  # Make an API request.
@@ -56,8 +56,8 @@ def BQ_table_exists(BQ_client, dataset, table):
 #     print("Table is not found.")
 
 
-def create_BQ_table(client, dataset, table, schema):
-    table_id = "{}.{}.{}".format(client.project, dataset, table)
+def create_BQ_table(client, project, dataset, table, schema):
+    table_id = "{}.{}.{}".format(project, dataset, table)
     table = bigquery.Table(table_id, schema=schema)
     table = client.create_table(table)  # Make an API request.
     return table
@@ -81,8 +81,8 @@ def delete_BQ_Table(client, dataset, table):
     # google.api_core.exceptions.NotFound unless not_found_ok is True.
     client.delete_table(table_id, not_found_ok=True)  # Make an API request.
 
-def load_BQ_from_json(client, dataset, table, json_rows, aschema):
-    table_id = "{}.{}.{}".format(client.project, dataset, table)
+def load_BQ_from_json(client, project, dataset, table, json_rows, aschema):
+    table_id = "{}.{}.{}".format(project, dataset, table)
 
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
@@ -99,7 +99,7 @@ def load_BQ_from_json(client, dataset, table, json_rows, aschema):
               file=sys.stdout, flush=True)
 
     result = job.result()
-    return job
+    return result
 
 
 # csv_rows is newline delimited csv data

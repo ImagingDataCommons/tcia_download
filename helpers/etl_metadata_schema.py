@@ -21,6 +21,7 @@ etl_metadata_schema = [
              bigquery.SchemaField("SOPInstanceUID", "STRING", mode="NULLABLE"),
          ],
      ),
+    bigquery.SchemaField("Region", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("IDC_Version", "STRING", mode="REPEATED"),
     bigquery.SchemaField("GCS_Generation", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("CRC32C_Hash", "STRING", mode="REQUIRED"),

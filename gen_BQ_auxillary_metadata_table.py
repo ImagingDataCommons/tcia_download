@@ -28,10 +28,12 @@ def get_collection_info(args, bucket_name,storage_client):
     # print('get_series_info args, bucket_name: {}, study: {}, series: {}, storage_client: {}'.format(
     #     bucket_name, study, series, storage_client
     # ))
-    blobs = storage_client.bucket(bucket_name, user_project=args.project).list_blobs(
-        prefix="dicom/")
+    # blobs = storage_client.bucket(bucket_name, user_project=args.project).list_blobs(
+    blobs=storage_client.bucket(bucket_name).list_blobs(
+            prefix="dicom/")
     return blobs
 
+# Get a list of the buckets corresponding to collections whose metadata is to be added to the BQ table
 def get_buckets(args, storage_client):
     if args.collections == "all":
         buckets = [bucket for bucket in storage_client.list_buckets(prefix=args.bucket_prefix, project=args.project)]
@@ -58,7 +60,7 @@ def build_metadata(args, bucket_name, idc_collectionID, tcia_collectionID, stora
         generation = instance.id.split('/')[5]
 
         dicomweb_url_prefix = "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/dicomStores/{}/dicomWeb".format(
-            args.project, args.region, args.dataset_name, args.datastore_name)
+            args.project, args.region, args.gch_dataset_name, args.gch_datastore_name)
         row = {
             "SOPInstanceUID": SOPInstanceUID,
             "TCIA_CollectionID": tcia_collectionID,
@@ -80,6 +82,7 @@ def build_metadata(args, bucket_name, idc_collectionID, tcia_collectionID, stora
             "IDC_Version": [
                 args.version,
             ],
+            "Region": args.region,
             "GCS_Generation": generation,
             "CRC32C_Hash": instance.crc32c,
             "MD5_Hash": instance.md5_hash,
@@ -101,9 +104,9 @@ def main(args):
     # with open(args.schema) as f:
     #     schema = json.load(f)
 
-    if not BQ_table_exists(BQ_client, args.bqdataset_name, args.bqtable_name):
+    if not BQ_table_exists(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name):
         try:
-            table = create_BQ_table(BQ_client, args.bqdataset_name, args.bqtable_name, etl_metadata_schema)
+            table = create_BQ_table(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, etl_metadata_schema)
         except:
             print("Error creating table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
                   file=sys.stdout, flush=True)
@@ -111,30 +114,48 @@ def main(args):
             exit()
 
     etl_data = []
+
+    # Get a list of the buckets that have already been duplicated
+    try:
+        with open(args.dones) as f:
+            dones = f.readlines()
+        dones = [done.strip('\n') for done in dones]
+    except:
+        dones = []
+
     buckets = get_buckets(args, storage_client)
     for bucket in buckets:
-        idc_collectionID = bucket.split(args.bucket_prefix)[1]
-        tcia_collectionID = collection_ID_dict[idc_collectionID]
-        metadata = build_metadata(args, bucket, idc_collectionID, tcia_collectionID, storage_client)
-        job = load_BQ_from_json(BQ_client, args.bqdataset_name, args.bqtable_name, metadata, etl_metadata_schema)
-        while not job.state == 'DONE':
-            print('{} status: {}'.format(bucket, job.state))
-            time.sleep(args.period*60)
-        print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket))
+        if not bucket in dones:
+            idc_collectionID = bucket.split(args.bucket_prefix)[1]
+            tcia_collectionID = collection_ID_dict[idc_collectionID]
+            metadata = build_metadata(args, bucket, idc_collectionID, tcia_collectionID, storage_client)
+            result = load_BQ_from_json(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, metadata, etl_metadata_schema)
+            if result.errors == None:
+                print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket))
+                with open(args.dones,'a') as f:
+                    f.writelines('{}\n'.format(bucket))
+            else:
+                print("***{}: {}, Error {} ",format(time.asctime(), bucket, result.errors))
+                with open(args.dones,'a') as f:
+                    f.writelines('***{}, Error: {}\n'.format(bucket, result.errors))
+
+
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'], 'lists/idc_mvp_wave_0.txt'),
-                        help='Collections to import into DICOM store')
+                        help='File listing collections to add to BQ table, or "all"')
     parser.add_argument('--bucket_prefix', default='idc-tcia-')
-    parser.add_argument('--dataset_name', default='idc_tcia', help='DICOM dataset name')
-    parser.add_argument('--datastore_name', default='idc_tcia_mvp_wave0', help='DICOM datastore name')
-    parser.add_argument('--bqdataset_name', default='idc_tcia', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default='idc_tcia_auxilliary_metadata_mvp_wavex', help='BQ table name')
+    parser.add_argument('--gch_dataset_name', default='idc_tcia', help='DICOM dataset name')
+    parser.add_argument('--gch_datastore_name', default='idc_tcia_mvp_wave0', help='DICOM datastore name')
+    parser.add_argument('--bq_dataset_name', default='idc_tcia', help='BQ dataset name')
+    parser.add_argument('--bq_table_name', default='idc_tcia_auxilliary_metadata_mvp_wavex', help='BQ table name')
     parser.add_argument('--region', default='us', help='Dataset region')
-    parser.add_argument('--project', default='canceridc-data')
+    parser.add_argument('--project', default='canceridc-data', help="Project of the GCS, BQ and GCH tables")
     parser.add_argument('--schema', default='{}/helpers/etl_metadata_schema.py'.format(os.environ['PWD']))
     parser.add_argument('--version', default='1', help='IDC version')
+    parser.add_argument('--dones', default='./logs/gen_BQ_auxilliary_metadata_table_dones.txt', help='File of completed collections')
+
     parser.add_argument('--period', default=5, help="minutes to sleep between checking operation status")
     # parser.add_argument('--SA', '-a',
     #         default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')

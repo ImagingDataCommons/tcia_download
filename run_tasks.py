@@ -108,8 +108,7 @@ def main(args):
         logging = "gs://idc-etl-processing-dsub-logs/{}/dsub/{}".format(args.version, bucket_name)
 #        output_file = "{}.{}.log".format(tasks[task].split('\t')[2].split('.')[0], current_time)
         dsub_dict = [
-            'python',
-            '{}/env/bin/dsub'.format(os.getcwd()),
+            '/Users/BillClifford/git-home/tcia_download/env/bin/dsub',
             '--provider', 'google-v2',
             '--machine-type', 'n2-standard-2',
             '--ssh',
@@ -170,7 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('--trg', '-t', default='idc-tcia-1-', help='Prefix of target collection buckets, buckets being newly populated')
     parser.add_argument('--version', '-v', default='1', help='Version of target data set')
     parser.add_argument('--file', '-f', default='tasks.tsv')
-    parser.add_argument('--project', default='idc-etl-processing')
+    parser.add_argument('--project', default='idc-dev-etl', help='Project under which to store data ')
     args = parser.parse_args()
     print(args)
     main(args)

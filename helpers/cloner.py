@@ -24,24 +24,24 @@ TRG_PREFIX = os.environ['TRG_PREFIX']
 
 # Get information from GCS about the blobs in a series
 def get_series_info(bucket_name, study, series, storage_client):
-    print('get_series_info args, bucket_name: {}, study: {}, series: {}, project: {}, storage_client: {}'.format(
-        bucket_name, study, series, PROJECT, storage_client
-    ))
+    # print('get_series_info args, bucket_name: {}, study: {}, series: {}, project: {}, storage_client: {}'.format(
+    #     bucket_name, study, series, PROJECT, storage_client
+    # ))
+    series_info = {}
     try:
-        blobs = storage_client.bucket(bucket_name, user_project=PROJECT).list_blobs(
-            prefix="dicom/{}/{}/".format(study, series))
-        print('Got series info args, bucket_name: {}, study: {}, series: {}, project: {}, storage_client: {}'.format(
-            bucket_name, study, series, PROJECT, storage_client
-        ))
-        series_info = {blob.name: blob.crc32c for blob in blobs}
-        print('Generated series_info')
+        if storage_client.bucket(bucket_name).exists():
+            blobs = storage_client.bucket(bucket_name, user_project=PROJECT).list_blobs(
+                prefix="dicom/{}/{}/".format(study, series))
+            # print('Got series info args, bucket_name: {}, study: {}, series: {}, project: {}, storage_client: {}'.format(
+            #     bucket_name, study, series, PROJECT, storage_client
+            # ))
+            series_info = {blob.name: blob.crc32c for blob in blobs}
     except:
-        print("\tError in get_series_info: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
-              file=sys.stdout, flush=True)
-        print('blobs: {}'.format(blobs))
-        print('Could not get series info')
-        series_info = {}
-    return series_info
+        # The bucket probably exists but we don't have access to it
+        pass
+        # print("Bucket {} does not exist".format(bucket_name))
+    finally:
+        return series_info
 
 
 def validate_series(target_bucket_name, reference_bucket_name, study, series, storage_client, validation):
