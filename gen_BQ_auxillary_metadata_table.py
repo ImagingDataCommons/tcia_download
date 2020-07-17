@@ -44,7 +44,7 @@ def get_buckets(args, storage_client):
     return buckets
 
 def upload_metadata(args, BQ_client, bucket_name, idc_collectionID, tcia_collectionID, storage_client):
-    print("{}: Uploading metadata for {}".format(time.asctime(), bucket_name))
+    print("{}: Uploading metadata for {}".format(time.asctime(), bucket_name), flush=True)
     pages = get_collection_iterator(args, bucket_name, storage_client)
 
     # collection_info = get_collection_info(args, 'idc-tcia-lung-phantom', storage_client)
@@ -102,17 +102,17 @@ def upload_metadata(args, BQ_client, bucket_name, idc_collectionID, tcia_collect
             result = load_BQ_from_json(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, metadata,
                                        etl_metadata_schema)
             if not result.errors == None:
-                print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors))
+                print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors), flush=True)
                 return -1
-            print("    {}: Completed {} rows {}".format(time.asctime(), total_rows, bucket_name))
+            print("    {}: Completed {} rows {}".format(time.asctime(), total_rows, bucket_name), flush=True)
             rows = []
     metadata = '\n'.join(rows)
     result = load_BQ_from_json(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, metadata,
                                etl_metadata_schema)
     if not result.errors == None:
-        print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors))
+        print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors), flush=True)
         return -1
-    print("    {}: Completed {} rows {}".format(time.asctime(), total_rows, bucket_name))
+    print("    {}: Completed {} rows {}".format(time.asctime(), total_rows, bucket_name), flush=True)
 
     return 0
 
@@ -122,10 +122,6 @@ def main(args):
     BQ_client = bigquery.Client()
     collection_ID_dict = get_collection_ID_dict()
 
-    # Get the schema
-    # with open(args.schema) as f:
-    #     schema = json.load(f)
-
     if not BQ_table_exists(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name):
         try:
             table = create_BQ_table(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, etl_metadata_schema)
@@ -134,8 +130,6 @@ def main(args):
                   file=sys.stdout, flush=True)
             print("Failed to create BQ table")
             exit()
-
-    etl_data = []
 
     # Get a list of the buckets that have already been duplicated
     try:
@@ -151,7 +145,7 @@ def main(args):
             idc_collectionID = bucket.split(args.bucket_prefix)[1]
             tcia_collectionID = collection_ID_dict[idc_collectionID]
             result = upload_metadata(args, BQ_client, bucket, idc_collectionID, tcia_collectionID, storage_client)
-            print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket))
+            print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket), flush=True)
             with open(args.dones,'a') as f:
                 if result == 0:
                     f.writelines('{}\n'.format(bucket))
