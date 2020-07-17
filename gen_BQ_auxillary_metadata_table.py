@@ -24,14 +24,13 @@ def get_storage_client(project):
     return storage_client
 
 # Get info on each blob in a collection
-def get_collection_info(args, bucket_name,storage_client):
+def get_collection_iterator(args, bucket_name,storage_client):
     # print('get_series_info args, bucket_name: {}, study: {}, series: {}, storage_client: {}'.format(
     #     bucket_name, study, series, storage_client
     # ))
     # blobs = storage_client.bucket(bucket_name, user_project=args.project).list_blobs(
-    blobs=storage_client.bucket(bucket_name).list_blobs(
-            prefix="dicom/")
-    return blobs
+    pages=storage_client.list_blobs(bucket_name, prefix="dicom/")
+    return pages
 
 # Get a list of the buckets corresponding to collections whose metadata is to be added to the BQ table
 def get_buckets(args, storage_client):
@@ -44,56 +43,79 @@ def get_buckets(args, storage_client):
         buckets = ['idc-tcia-{}'.format(bucket.strip('\n').lower().replace(' ','-').replace('_','-')) for bucket in buckets if not "#" in bucket]
     return buckets
 
-def build_metadata(args, bucket_name, idc_collectionID, tcia_collectionID, storage_client):
-    print("{}: Getting instance metadata for {}".format(time.asctime(), bucket_name))
-    collection_info = get_collection_info(args, bucket_name, storage_client)
+def upload_metadata(args, BQ_client, bucket_name, idc_collectionID, tcia_collectionID, storage_client):
+    print("{}: Uploading metadata for {}".format(time.asctime(), bucket_name))
+    pages = get_collection_iterator(args, bucket_name, storage_client)
 
     # collection_info = get_collection_info(args, 'idc-tcia-lung-phantom', storage_client)
+    processed_rows = 0
     rows = []
-    metadata = ""
-    instances = [instance for instance in collection_info]
-    print("{}: Started metdata build for {}, {} instances".format(time.asctime(), bucket_name, len(instances)))
-    for instance in instances:
-        StudyInstanceUID = instance.id.split('/')[2]
-        SeriesInstanceUID = instance.id.split('/')[3]
-        SOPInstanceUID = instance.id.split('/')[4].split('.dcm')[0]
-        generation = instance.id.split('/')[5]
+    # print("{}: Started metdata build for {}".format(time.asctime(), bucket_name))
+    total_rows=0
+    processed_pages=0
+    rows = []
+    for page in pages.pages:
+        instances = list(page)
+        for instance in instances:
+            StudyInstanceUID = instance.id.split('/')[2]
+            SeriesInstanceUID = instance.id.split('/')[3]
+            SOPInstanceUID = instance.id.split('/')[4].split('.dcm')[0]
+            generation = instance.id.split('/')[5]
 
-        dicomweb_url_prefix = "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/dicomStores/{}/dicomWeb".format(
-            args.project, args.region, args.gch_dataset_name, args.gch_datastore_name)
-        row = {
-            "SOPInstanceUID": SOPInstanceUID,
-            "TCIA_CollectionID": tcia_collectionID,
-            "IDC_CollectionID": idc_collectionID,
-            "GCS_URL": '{}#{}'.format(instance.public_url,generation),
-            "DICOM_STORE_URLs": {
-                "StudyInstanceUID":'{}/studies/{}'.format(
-                    dicomweb_url_prefix, StudyInstanceUID),
-                "SeriesInstanceUID": '{}/studies/{}/series/{}'.format(
-                    dicomweb_url_prefix, StudyInstanceUID, SeriesInstanceUID),
-                "SOPInstanceUID": '{}/studies/{}/series/{}/instances/{}'.format(
-                    dicomweb_url_prefix, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID),
-            },
-            "INDEXD_GUIDSs": {
-                "StudyInstanceUID": "",
-                "SeriesInstanceUID": "",
-                "SOPInstanceUID": "",
-            },
-            "IDC_Version": [
-                args.version,
-            ],
-            "Region": args.region,
-            "GCS_Generation": generation,
-            "CRC32C_Hash": instance.crc32c,
-            "MD5_Hash": instance.md5_hash,
-            "Instance_Size": instance.size,
-            "Time_Created": str(instance.time_created),
-            "Time_Updated": str(instance.updated),
-        }
-        rows.append(json.dumps(row))
+            dicomweb_url_prefix = "https://healthcare.googleapis.com/v1/projects/{}/locations/{}/datasets/{}/dicomStores/{}/dicomWeb".format(
+                args.project, args.region, args.gch_dataset_name, args.gch_datastore_name)
+            row = {
+                "SOPInstanceUID": SOPInstanceUID,
+                "TCIA_CollectionID": tcia_collectionID,
+                "IDC_CollectionID": idc_collectionID,
+                "Webapp_CollectionID": idc_collectionID.replace('-','_'),
+                "GCS_URL": '{}#{}'.format(instance.public_url,generation),
+                "DICOM_STORE_URLs": {
+                    "StudyInstanceUID":'{}/studies/{}'.format(
+                        dicomweb_url_prefix, StudyInstanceUID),
+                    "SeriesInstanceUID": '{}/studies/{}/series/{}'.format(
+                        dicomweb_url_prefix, StudyInstanceUID, SeriesInstanceUID),
+                    "SOPInstanceUID": '{}/studies/{}/series/{}/instances/{}'.format(
+                        dicomweb_url_prefix, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID),
+                },
+                "INDEXD_GUIDSs": {
+                    "StudyInstanceUID": "",
+                    "SeriesInstanceUID": "",
+                    "SOPInstanceUID": "",
+                },
+                "IDC_Version": [
+                    args.version,
+                ],
+                "Region": args.region,
+                "GCS_Generation": [generation],
+                "CRC32C_Hash": instance.crc32c,
+                "MD5_Hash": instance.md5_hash,
+                "Instance_Size": instance.size,
+                "Time_Created": str(instance.time_created),
+                "Time_Updated": str(instance.updated),
+            }
+            rows.append(json.dumps(row))
+            total_rows+=1
+        processed_pages += 1
+        if processed_pages % 50 == 0:
+            metadata = '\n'.join(rows)
+            result = load_BQ_from_json(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, metadata,
+                                       etl_metadata_schema)
+            if not result.errors == None:
+                print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors))
+                return -1
+            print("    {}: Completed {} rows {}".format(time.asctime(), total_rows, bucket_name))
+            rows = []
     metadata = '\n'.join(rows)
-    print("{}: Completed metatdata build for {}, {} instances".format(time.asctime(), bucket_name, len(instances)))
-    return metadata
+    result = load_BQ_from_json(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, metadata,
+                               etl_metadata_schema)
+    if not result.errors == None:
+        print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors))
+        return -1
+    print("    {}: Completed {} rows {}".format(time.asctime(), total_rows, bucket_name))
+
+    return 0
+
 
 def main(args):
     storage_client = get_storage_client(args.project)
@@ -128,16 +150,13 @@ def main(args):
         if not bucket in dones:
             idc_collectionID = bucket.split(args.bucket_prefix)[1]
             tcia_collectionID = collection_ID_dict[idc_collectionID]
-            metadata = build_metadata(args, bucket, idc_collectionID, tcia_collectionID, storage_client)
-            result = load_BQ_from_json(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, metadata, etl_metadata_schema)
-            if result.errors == None:
-                print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket))
-                with open(args.dones,'a') as f:
+            result = upload_metadata(args, BQ_client, bucket, idc_collectionID, tcia_collectionID, storage_client)
+            print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket))
+            with open(args.dones,'a') as f:
+                if result == 0:
                     f.writelines('{}\n'.format(bucket))
-            else:
-                print("***{}: {}, Error {} ",format(time.asctime(), bucket, result.errors))
-                with open(args.dones,'a') as f:
-                    f.writelines('***{}, Error: {}\n'.format(bucket, result.errors))
+                else:
+                    f.writelines('****Error: {}\n'.format(bucket))
 
 
 

@@ -28,6 +28,7 @@ def build_metadata():
         collection_data['Collection'] =collection_id
         collection_data['TCIA_CollectionID'] = collection_ids[collection_id]['TCIA_CollectionID']
         collection_data['IDC_CollectionID'] = collection_ids[collection_id]['IDC_CollectionID']
+        collection_data['Webapp_CollectionID'] = collection_ids[collection_id]['IDC_CollectionID'].replace('-','_')
         if collection_id in description_id_map:
             collection_data['Description'] = descriptions[description_id_map[collection_id]]
         else:

@@ -5,6 +5,7 @@ collections_metadata_schema = [
     bigquery.SchemaField('Collection', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('TCIA_CollectionID', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('IDC_CollectionID', 'STRING', mode='NULLABLE'),
+    bigquery.SchemaField('Webapp_CollectionID', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('Status', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE'),
     bigquery.SchemaField('Access', 'STRING', mode='NULLABLE'),

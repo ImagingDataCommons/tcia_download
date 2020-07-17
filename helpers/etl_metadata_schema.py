@@ -5,6 +5,7 @@ etl_metadata_schema = [
     bigquery.SchemaField("SOPInstanceUID", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("TCIA_CollectionID", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("IDC_CollectionID", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("Webapp_CollectionID", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("GCS_URL", "STRING", mode="REQUIRED"),
 
     bigquery.SchemaField("DICOM_STORE_URLs", "RECORD", mode="REQUIRED",
@@ -23,7 +24,7 @@ etl_metadata_schema = [
      ),
     bigquery.SchemaField("Region", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("IDC_Version", "STRING", mode="REPEATED"),
-    bigquery.SchemaField("GCS_Generation", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("GCS_Generation", "STRING", mode="REPEATED"),
     bigquery.SchemaField("CRC32C_Hash", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("MD5_Hash", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("Instance_Size", "INTEGER", mode="REQUIRED"),
