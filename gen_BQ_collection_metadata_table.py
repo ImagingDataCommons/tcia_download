@@ -7,8 +7,8 @@ import time
 from google.cloud import bigquery
 from helpers.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json
 from helpers.collections_metadata_schema import collections_metadata_schema
-from helpers.tcia_helpers import get_TCIA_collections, get_collection_descriptions, scrape_tcia_collections_page, \
-    build_TCIA_to_Description_ID_Table
+from helpers.tcia_helpers import get_TCIA_collections, get_collection_descriptions
+from helpers.tcia_scrapers import scrape_tcia_collections_page, build_TCIA_to_Description_ID_Table
 
 def build_metadata():
     # Get collection descriptions from TCIA
@@ -45,7 +45,7 @@ def main(args):
     BQ_client = bigquery.Client()
 
     metadata = build_metadata()
-    job = load_BQ_from_json(BQ_client, args.bqdataset_name, args.bqtable_name, metadata, collections_metadata_schema)
+    job = load_BQ_from_json(BQ_client, args.project, args.bqdataset_name, args.bqtable_name, metadata, collections_metadata_schema)
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
         time.sleep(args.period * 60)
@@ -55,10 +55,10 @@ if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--file', default='{}/{}'.format(os.environ['PWD'], 'lists/collection_ids.json'),
                         help='Table to translate between collection IDs ')
-    parser.add_argument('--bqdataset_name', default='idc_tcia', help='BQ dataset name')
+    parser.add_argument('--bqdataset_name', default='idc_tcia_mvp-wave0', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='idc_tcia_collections_metadata', help='BQ table name')
     parser.add_argument('--region', default='us', help='Dataset region')
-    parser.add_argument('--project', default='canceridc-data')
+    parser.add_argument('--project', default='idc-dev-etl')
 #    parser.add_argument('--schema', default='{}/helpers/collections_metadata_schema.py'.format(os.environ['PWD']))
 
     args = parser.parse_args()

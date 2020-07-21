@@ -87,9 +87,12 @@ def main(args):
     client = storage.Client(project=args.dst_project)
 
     # Get a list of the buckets that have already been duplicated
-    with open('dones.txt') as f:
-        dones = f.readlines()
-    dones = [done.strip('\n') for done in dones]
+    try:
+        with open("{}/{}".format(os.environ['PWD'], args.dones)) as f:
+            dones = f.readlines()
+        dones = [done.strip('\n') for done in dones]
+    except FileNotFoundError:
+        dones = []
 
 
     # Get a list of all the buckets in the src_project
@@ -106,7 +109,7 @@ def main(args):
             '{}{}'.format(args.dst_bucket_prefix, bucket)
             result = copy_bucket(src_bucket_name, dst_bucket_name, args.src_project, args.dst_project, client)
             if result['status'] >=0 :
-                with open("{}/dones.txt".format(os.environ['PWD']), 'a') as f:
+                with open("{}/{}".format(os.environ['PWD'], args.dones), 'a') as f:
                     f.writelines('{}\n'.format(result['bucket']))
     else:
         # Launch some worker processes
@@ -131,7 +134,7 @@ def main(args):
             result = done_queue.get()
             enqueued_collections.remove(result['bucket'])
             if result['status'] >=0 :
-                with open("{}/dones.txt".format(os.environ['PWD']), 'a') as f:
+                with open("{}/{}".format(os.environ['PWD'], args.dones), 'a') as f:
                     f.writelines('{}\n'.format(result['bucket']))
 
          # Tell child processes to stop
@@ -141,12 +144,13 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src_bucket_prefix', default='idc-tcia-1-')
-    parser.add_argument('--dst_bucket_prefix', default='idc-tcia-')
-    parser.add_argument('--src_project', default='idc-dev-etl')
+    parser.add_argument('--src_bucket_prefix', default='idc-tcia-1')
+    parser.add_argument('--dst_bucket_prefix', default='idc-tcia-mvp-wave0-')
+    parser.add_argument('--src_project', default='canceridc-data')
 #    parser.add_argument('--dst_project', default='idc-dev-etl')
-    parser.add_argument('--dst_project', default='canceridc-data')
+    parser.add_argument('--dst_project', default='idc-dev-etl')
     parser.add_argument('--processes', default=4)
+    parser.add_argument('--dones', default='logs/dup_collections_dones.txt', help="List of collections that have been copied")
     parser.add_argument('--SA', '-a',
             default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
     args = parser.parse_args()
