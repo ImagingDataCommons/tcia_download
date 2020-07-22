@@ -1,6 +1,5 @@
 # These are the collections in MVP wave0 as specified in
 # https://docs.google.com/spreadsheets/d/1287UKVX5K063wXWbp6QUxk9fqZ7oFvcWQevvoe0Xft8/edit#gid=290666144
-
 TCGA-READ
 TCGA-THCA
 TCGA-UCEC

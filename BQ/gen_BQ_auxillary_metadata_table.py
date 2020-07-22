@@ -7,7 +7,7 @@ import time
 from google.cloud import storage
 from google.cloud import bigquery
 from helpers.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json
-from helpers.etl_metadata_schema import etl_metadata_schema
+from BQ.schemas.etl_metadata_schema import etl_metadata_schema
 from helpers.tcia_helpers import get_TCIA_collections
 
 # Create a dictionary to map from tcia collection to idc collection name
@@ -117,7 +117,7 @@ def upload_metadata(args, BQ_client, bucket_name, idc_collectionID, tcia_collect
     return 0
 
 
-def main(args):
+def gen_aux_table(args):
     storage_client = get_storage_client(args.project)
     BQ_client = bigquery.Client()
     collection_ID_dict = get_collection_ID_dict()
@@ -137,6 +137,7 @@ def main(args):
             dones = f.readlines()
         dones = [done.strip('\n') for done in dones]
     except:
+        os.mknod(args.dones)
         dones = []
 
     buckets = get_buckets(args, storage_client)
@@ -168,8 +169,6 @@ if __name__ == '__main__':
     parser.add_argument('--schema', default='{}/helpers/etl_metadata_schema.py'.format(os.environ['PWD']))
     parser.add_argument('--version', default='1', help='IDC version')
     parser.add_argument('--dones', default='./logs/gen_BQ_auxilliary_metadata_table_dones.txt', help='File of completed collections')
-
-    parser.add_argument('--period', default=5, help="minutes to sleep between checking operation status")
     # parser.add_argument('--SA', '-a',
     #         default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
     parser.add_argument('--SA', default='', help='Path to service accoumt key')
@@ -177,4 +176,4 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     if not args.SA == '':
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
-    main(args)
+    gen_aux_table(args)

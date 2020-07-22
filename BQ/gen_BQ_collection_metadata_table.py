@@ -5,12 +5,12 @@ import os
 import json
 import time
 from google.cloud import bigquery
-from helpers.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json
-from helpers.collections_metadata_schema import collections_metadata_schema
-from helpers.tcia_helpers import get_TCIA_collections, get_collection_descriptions
+from helpers.bq_helpers import load_BQ_from_json
+from BQ.schemas.collections_metadata_schema import collections_metadata_schema
+from helpers.tcia_helpers import get_collection_descriptions
 from helpers.tcia_scrapers import scrape_tcia_collections_page, build_TCIA_to_Description_ID_Table
 
-def build_metadata():
+def build_metadata(args):
     # Get collection descriptions from TCIA
     descriptions = get_collection_descriptions()
     # Scrape the TCIA Data Collections page for collection metadata
@@ -41,10 +41,10 @@ def build_metadata():
     #     metadata = '\n'.join((metadata, json.dumps(v)))
     return metadata
 
-def main(args):
+def gen_collections_table(args):
     BQ_client = bigquery.Client()
 
-    metadata = build_metadata()
+    metadata = build_metadata(args)
     job = load_BQ_from_json(BQ_client, args.project, args.bqdataset_name, args.bqtable_name, metadata, collections_metadata_schema)
     while not job.state == 'DONE':
         print('Status: {}'.format(job.state))
@@ -59,8 +59,7 @@ if __name__ == '__main__':
     parser.add_argument('--bqtable_name', default='idc_tcia_collections_metadata', help='BQ table name')
     parser.add_argument('--region', default='us', help='Dataset region')
     parser.add_argument('--project', default='idc-dev-etl')
-#    parser.add_argument('--schema', default='{}/helpers/collections_metadata_schema.py'.format(os.environ['PWD']))
 
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    main(args)
+    gen_collections_table(args)

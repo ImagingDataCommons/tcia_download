@@ -26,29 +26,9 @@ def get_buckets(args, storage_client):
     else:
         with open(args.collections) as f:
             buckets = f.readlines()
-        buckets = ['idc-tcia-{}'.format(bucket.strip('\n').lower().replace(' ','-').replace('_','-')) for bucket in buckets if not "#" in bucket]
+        buckets = ['{}{}'.format(args.bucket_prefix, bucket.strip('\n').lower().replace(' ','-').replace('_','-')) for bucket in buckets if not "#" in bucket]
     return buckets
 
-
-# def wait_done(args, client):
-#     while True:
-#         with open(args.log) as f:
-#             stats = json.load(f)
-#         all_done = True
-#         for bucket in stats:
-#             if not 'done' in stats[bucket]:
-#                 operation = stats[bucket]['name'].split('/')[-1]
-#                 result = get_dataset_operation(args.project, args.region, args.dataset_name, operation)
-#                 stats[bucket] = result
-#                 all_done = False
-#             print("{}: {}".format(bucket, stats[bucket]))
-#         with open(args.log, 'w') as f:
-#             json.dump(stats, f)
-#         print("-------------------------------------")
-#
-#         if all_done:
-#             break
-#         sleep(args.period)
 
 def wait_done(bucket, response, args, client):
     operation = response['name'].split('/')[-1]
@@ -63,37 +43,10 @@ def wait_done(bucket, response, args, client):
     print("-------------------------------------")
     with open(args.log, 'a') as f:
         json.dump({bucket: result}, f)
-        print('\n',file=f)
+ #       print('\n',file=f)
 
 
-
-# Start a load operation on some buckets
-def start_load(args, client):
-    try:
-        with open(args.log) as f:
-            stats = json.load(f)
-    except:
-        stats = {}
-    buckets = get_buckets(args, client)
-    for bucket in buckets:
-        content_uri = '{}/dicom/*/*/*.dcm'.format(bucket)
-        try:
-            response=import_dicom_instance( args.project, args.region, args.dataset_name, args.datastore_name, content_uri)
-            print('Imported {}'.format(bucket))
-        except HttpError as e:
-            err=json.loads(e.content)
-            print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'], err['error']['message']))
-        # stats[bucket]=response
-        #
-        # with open(args.log,'w') as f:
-        #     json.dump(stats, f)
-        #
-        wait_done(bucket, response, args, client)
-
-
-
-
-def main(args):
+def load_collections(args):
     client = get_storage_client(args.project)
     try:
         dataset = get_dataset(args.project, args.region, args.dataset_name)
@@ -107,7 +60,38 @@ def main(args):
         datastore = create_dicom_store(args.project, args.region, args.dataset_name, args.datastore_name)
     pass
 
-    start_load(args, client)
+    if not os.path.exists(args.log):
+        os.mknod(args.log)
+
+    try:
+        with open(args.log) as f:
+            raw = f.readlines()
+        dones = [d.split(':')[0][2:-1] for d in raw[0].split('}}}')]
+    except:
+        os.mknod(args.dones)
+        dones = []
+
+    buckets = get_buckets(args, client)
+    for bucket in buckets:
+        if not bucket in dones:
+            content_uri = '{}/dicom/*/*/*.dcm'.format(bucket)
+            try:
+                response=import_dicom_instance( args.project, args.region, args.dataset_name, args.datastore_name, content_uri)
+                print('Imported {}'.format(bucket))
+            except HttpError as e:
+                err=json.loads(e.content)
+                print('Error loading {}; code: {}, message: {}'.format(bucket, err['error']['code'], err['error']['message']))
+                if 'resolves to zero GCS objects' in err['error']['message']:
+                    # An empty collection bucket throws an error
+                    continue
+                break
+            # stats[bucket]=response
+            #
+            # with open(args.log,'w') as f:
+            #     json.dump(stats, f)
+            #
+            wait_done(bucket, response, args, client)
+
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
@@ -120,11 +104,11 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='canceridc-data')
     parser.add_argument('--log', default='{}/{}'.format(os.environ['PWD'],'logs/load_dicom_store.log'))
     parser.add_argument('--period', default=30, help="seconds to sleep between checking operation status")
-    # parser.add_argument('--SA', '-a',
-    #         default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
+    parser.add_argument('--SA',
+            default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
     parser.add_argument('--SA', default = '', help='Path to service accoumt key')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     if not args.SA == '':
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
-    main(args)
+    load_collections(args)

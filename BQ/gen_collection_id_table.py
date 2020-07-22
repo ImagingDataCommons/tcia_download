@@ -4,11 +4,7 @@ import argparse
 import sys
 import os
 import json
-import time
 from google.cloud import bigquery
-from helpers.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json
-from helpers.collections_metadata_schema import collections_metadata_schema
-from helpers.tcia_helpers import get_TCIA_collections, get_collection_descriptions
 from helpers.tcia_scrapers import scrape_tcia_collections_page
 
 # Create a table that maps from the collection names in the TCIA Collection Data page,

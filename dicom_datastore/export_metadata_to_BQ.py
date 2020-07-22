@@ -63,7 +63,7 @@ def export_dicom_metadata(args):
             time.sleep(60)
 
 
-def main(args):
+def export_metadata(args):
     # try:
     #     dataset = get_dataset(args.SA, args.project, args.region, args.dcmdataset_name)
     # except HttpError:
@@ -83,6 +83,7 @@ def main(args):
         finished = time.time()
         elapsed = finished - start
         print('Elapsed time: {}'.format(elapsed))
+
     except HttpError as e:
         err=json.loads(e.content)
         print('Error loading {}; code: {}, message: {}'.format(bucket.name, err['error']['code'], err['error']['message']))
@@ -103,4 +104,4 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     if not args.SA == '':
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
-    main(args)
+    export_metadata(args)

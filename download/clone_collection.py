@@ -7,9 +7,9 @@ import time
 import os
 import sys
 import json
-import logging
+
 sys.path.append(os.environ['CLONE_TCIA'])
-from helpers.cloner import copy_collection
+from download.cloner import copy_collection
 import argparse
 from collections import OrderedDict
 
