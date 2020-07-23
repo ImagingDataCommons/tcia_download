@@ -130,7 +130,15 @@ def gen_aux_table(args):
                   file=sys.stdout, flush=True)
             print("Failed to create BQ table")
             exit()
+    if not os.path.exists(os.path.dirname(args.dones)):
+        try:
+            os.makedirs(os.path.dirname(args.dones))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
 
+    # with open(filename, "w") as f:
+    #     f.write("FOOBAR")
     # Get a list of the buckets that have already been duplicated
     try:
         with open(args.dones) as f:
@@ -157,7 +165,7 @@ def gen_aux_table(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'], 'lists/idc_mvp_wave_0.txt'),
+    parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'], '../lists/idc_mvp_wave_0.txt'),
                         help='File listing collections to add to BQ table, or "all"')
     parser.add_argument('--bucket_prefix', default='idc-tcia-')
     parser.add_argument('--gch_dataset_name', default='idc_tcia_mvp_wave0', help='DICOM dataset name')

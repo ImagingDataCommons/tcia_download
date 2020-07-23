@@ -3,7 +3,7 @@ import sys
 import os
 import json
 from google.cloud import storage
-from GCS.compare_collection import compare_collection
+from GCS.compare_collection import comp_collection
 
 # Get a list of the buckets corresponding to collections whose metadata is to be added to the BQ table
 def get_buckets(args, storage_client):
@@ -18,14 +18,25 @@ def get_buckets(args, storage_client):
 
 def compare_collections(args):
     client = storage.Client()
+    try:
+        with open(args.dones) as f:
+            dones = f.readlines()
+        dones = [done.strip('\n') for done in dones]
+    except:
+        os.mknod(args.dones)
+        dones = []
 
     buckets = get_buckets(args, client)
     for bucket in buckets:
-        compare_collection(bucket, bucket.replace('idc-tcia-1','idc-tcia'))
+        if not bucket in dones:
+            comp_collection(bucket, bucket.replace('idc-tcia-1','idc-tcia'))
+            with open(args.dones, 'a') as f:
+                f.writelines('{}\n'.format(bucket))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--dones', default='./logs/compare_collections_dones.txt', help='File of completed collections')
     parser.add_argument('--collections', default='all',
                         help='File listing collections to add to BQ table, or "all"')
     parser.add_argument('--bucket_prefix', default='idc-tcia-1-',
@@ -36,5 +47,5 @@ if __name__ == '__main__':
     print("{}".format(args), file=sys.stdout)
     if not args.SA == '':
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
-
+    print(os.getcwd())
     compare_collections(args)
