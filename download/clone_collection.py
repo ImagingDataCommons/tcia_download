@@ -29,12 +29,27 @@ def main(args):
 
     bucket_url = "gs://{}".format(target_bucket_name)
 
-    bucket = storage_client.bucket(target_bucket_name)
-    if not bucket.exists():
-        new_bucket = storage_client.create_bucket(bucket)
-        new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
-        new_bucket.patch()
-                
+    # bucket = storage_client.bucket(target_bucket_name)
+    # if not bucket.exists():
+    #     new_bucket = storage_client.create_bucket(bucket)
+    #     new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+    #     new_bucket.patch()
+
+    # Try to create the destination bucket
+    new_bucket = client.bucket(target_bucket_name)
+    new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+    new_bucket.versioning_enabled = True
+    try:
+        result = client.create_bucket(new_bucket, location='us')
+        return(0)
+    except Conflict:
+        # Bucket exists
+        pass
+    except:
+        # Bucket creation failed somehow
+        print("Error creating bucket {}: {}".format(target_bucket_name, result), flush=True)
+        return(-1)
+
     start = time.time()
     (compressed, uncompressed, series_statistics) = copy_collection(TCIA_NAME, processes, storage_client, PROJECT)
     end = time.time()
