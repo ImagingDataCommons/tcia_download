@@ -12,28 +12,42 @@ from helpers.tcia_scrapers import scrape_tcia_collections_page, build_TCIA_to_De
 
 def build_metadata(args):
     # Get collection descriptions from TCIA
-    descriptions = get_collection_descriptions()
+    collection_descriptions = get_collection_descriptions()
     # Scrape the TCIA Data Collections page for collection metadata
-    collections = scrape_tcia_collections_page()
-    # Get a table to translate between the 'Collection' value in the scraped data, and collection id's
-    # used by ETL
-    description_id_map = build_TCIA_to_Description_ID_Table(collections, descriptions)
+    collection_metadata = scrape_tcia_collections_page()
+    # Get a table to translate between the 'Collection' value in the scraped collection_metadata, and collection id's
+    # of the collections_descriptions
+    description_id_map = build_TCIA_to_Description_ID_Table(collection_metadata, collection_descriptions)
 
     # Load a table that maps from the collection id in collections to ids used by the TCIA API and
     # by IDC in collection bucket names
     with open(args.file) as f:
         collection_ids = json.load(f)
     rows = []
-    for collection_id, collection_data in collections.items():
-        collection_data['Collection'] =collection_id
-        collection_data['TCIA_CollectionID'] = collection_ids[collection_id]['TCIA_CollectionID']
-        collection_data['IDC_CollectionID'] = collection_ids[collection_id]['IDC_CollectionID']
-        collection_data['Webapp_CollectionID'] = collection_ids[collection_id]['IDC_CollectionID'].replace('-','_')
-        if collection_id in description_id_map:
-            collection_data['Description'] = descriptions[description_id_map[collection_id]]
-        else:
-            collection_data['Description'] = ""
-        rows.append(json.dumps(collection_data))
+    for collection_id, collection_data in collection_metadata.items():
+        # print(collection_id)
+        ids = next((item for item in collection_ids if item["TCIA_Webapp_CollectionID"] == collection_id), None)
+        if ids != None:
+            collection_data['TCIA_Webapp_CollectionID'] = collection_id
+            collection_data['TCIA_API_CollectionID'] = ids["TCIA_API_CollectionID"]
+            collection_data['NBIA_CollectionID'] = ids["NBIA_CollectionID"]
+            collection_data['IDC_GCS_CollectionID'] = ids["IDC_GCS_CollectionID"]
+            collection_data['IDC_Webapp_CollectionID'] = ids["IDC_Webapp_CollectionID"]
+            if ids["NBIA_CollectionID"] in collection_descriptions:
+                collection_data['Description'] = collection_descriptions[description_id_map[collection_id]]
+
+            # if collection_id in description_id_map:
+            #     collection_data['NBIA_CollectionID'] = description_id_map[collection_id]
+            #     collection_data['TCIA_CollectionID'] = collection_ids[collection_id]['TCIA_CollectionID']
+            #     collection_data['IDC_CollectionID'] = collection_ids[collection_id]['IDC_CollectionID']
+            #     collection_data['Webapp_CollectionID'] = collection_ids[collection_id]['IDC_CollectionID'].replace('-','_')
+            #     if collection_id in description_id_map:
+            #         collection_data['Description'] = collection_descriptions[description_id_map[collection_id]]
+            #     else:
+            #         collection_data['Description'] = ""
+            rows.append(json.dumps(collection_data))
+        # else:
+        #     print("{} not in collections_ids".format(collection_id))
     metadata = '\n'.join(rows)
     # for collection in collections:
     #     metadata = '\n'.join((metadata, json.dumps(collection)))
@@ -55,8 +69,10 @@ if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--file', default='{}/{}'.format(os.environ['PWD'], 'lists/collection_ids.json'),
                         help='Table to translate between collection IDs ')
-    parser.add_argument('--bqdataset_name', default='idc_tcia_mvp-wave0', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default='idc_tcia_collections_metadata', help='BQ table name')
+    parser.add_argument('--collections', default='{}/lists/idc_mvp_wave_0.txt'.format(os.environ['PWD']),
+                        help="File containing list of IDC collection IDs or 'all' for all collections")
+    parser.add_argument('--bqdataset_name', default='idc_tcia_dev', help='BQ dataset name')
+    parser.add_argument('--bqtable_name', default='idc_tcia_collections_metadatax', help='BQ table name')
     parser.add_argument('--region', default='us', help='Dataset region')
     parser.add_argument('--project', default='idc-dev-etl')
 

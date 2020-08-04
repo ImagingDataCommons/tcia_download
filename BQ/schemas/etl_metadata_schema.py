@@ -3,9 +3,9 @@ from google.cloud import bigquery
 
 etl_metadata_schema = [
     bigquery.SchemaField("SOPInstanceUID", "STRING", mode="REQUIRED"),
-    bigquery.SchemaField("TCIA_CollectionID", "STRING", mode="REQUIRED"),
-    bigquery.SchemaField("IDC_CollectionID", "STRING", mode="REQUIRED"),
-    bigquery.SchemaField("Webapp_CollectionID", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("TCIA_API_CollectionID", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("IDC_GCS_CollectionID", "STRING", mode="REQUIRED"),
+    bigquery.SchemaField("IDC_Webapp_CollectionID", "STRING", mode="REQUIRED"),
     bigquery.SchemaField("GCS_URL", "STRING", mode="REQUIRED"),
 
     bigquery.SchemaField("DICOM_STORE_URLs", "RECORD", mode="REQUIRED",

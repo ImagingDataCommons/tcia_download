@@ -10,13 +10,13 @@ from helpers.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_js
 from BQ.schemas.etl_metadata_schema import etl_metadata_schema
 from helpers.tcia_helpers import get_TCIA_collections
 
-# Create a dictionary to map from tcia collection to idc collection name
-def get_collection_ID_dict():
-        idc_collections = get_TCIA_collections()
+# Create a dictionary to map from idc collection to tcia API collection name
+def get_idc_gcs_to_tcia_api_collection_ID_dict():
+        tcia_api = get_TCIA_collections()
         collection_ID_dict = {}
-        for collection in idc_collections:
-            tcia_collection_name = collection.replace(' ','-').replace('_','-'). lower()
-            collection_ID_dict[tcia_collection_name] = collection
+        for collection in tcia_api:
+            idc_gcs_collection_name = collection.replace(' ','-').replace('_','-'). lower()
+            collection_ID_dict[idc_gcs_collection_name] = collection
         return collection_ID_dict
 
 def get_storage_client(project):
@@ -43,7 +43,7 @@ def get_buckets(args, storage_client):
         buckets = ['idc-tcia-{}'.format(bucket.strip('\n').lower().replace(' ','-').replace('_','-')) for bucket in buckets if not "#" in bucket]
     return buckets
 
-def upload_metadata(args, BQ_client, bucket_name, idc_collectionID, tcia_collectionID, storage_client):
+def upload_metadata(args, BQ_client, bucket_name, idc_gcs_collectionID, tcia_api_collectionID, storage_client):
     print("{}: Uploading metadata for {}".format(time.asctime(), bucket_name), flush=True)
     pages = get_collection_iterator(args, bucket_name, storage_client)
 
@@ -66,9 +66,9 @@ def upload_metadata(args, BQ_client, bucket_name, idc_collectionID, tcia_collect
                 args.project, args.region, args.gch_dataset_name, args.gch_datastore_name)
             row = {
                 "SOPInstanceUID": SOPInstanceUID,
-                "TCIA_CollectionID": tcia_collectionID,
-                "IDC_CollectionID": idc_collectionID,
-                "Webapp_CollectionID": idc_collectionID.replace('-','_'),
+                "TCIA_API_CollectionID": tcia_api_collectionID,
+                "IDC_GCS_CollectionID": idc_gcs_collectionID,
+                "IDC_Webapp_CollectionID": idc_gcs_collectionID.replace('-', '_'),
                 "GCS_URL": '{}#{}'.format(instance.public_url,generation),
                 "DICOM_STORE_URLs": {
                     "StudyInstanceUID":'{}/studies/{}'.format(
@@ -120,7 +120,7 @@ def upload_metadata(args, BQ_client, bucket_name, idc_collectionID, tcia_collect
 def gen_aux_table(args):
     storage_client = get_storage_client(args.project)
     BQ_client = bigquery.Client()
-    collection_ID_dict = get_collection_ID_dict()
+    idc_gcs_to_tcia_api_collection_ID_dict = get_idc_gcs_to_tcia_api_collection_ID_dict()
 
     if not BQ_table_exists(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name):
         try:
@@ -151,9 +151,9 @@ def gen_aux_table(args):
     buckets = get_buckets(args, storage_client)
     for bucket in buckets:
         if not bucket in dones:
-            idc_collectionID = bucket.split(args.bucket_prefix)[1]
-            tcia_collectionID = collection_ID_dict[idc_collectionID]
-            result = upload_metadata(args, BQ_client, bucket, idc_collectionID, tcia_collectionID, storage_client)
+            idc_gc_collectionID = bucket.split(args.bucket_prefix)[1]
+            tcia_api_collectionID = idc_gcs_to_tcia_api_collection_ID_dict[idc_gc_collectionID]
+            result = upload_metadata(args, BQ_client, bucket, idc_gc_collectionID, tcia_api_collectionID, storage_client)
             print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket), flush=True)
             with open(args.dones,'a') as f:
                 if result == 0:

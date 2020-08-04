@@ -1,0 +1,48 @@
+#!/usr/bin/env
+import argparse
+import sys
+import os
+import json
+from os.path import join
+import time
+from google.cloud import bigquery
+from helpers.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json
+from BQ.schemas.third_party_schema import third_party_schema
+from BQ.identify_third_party_series import id_3rd_party_series
+
+# Create a BQ table of (SeriesInstanceUID, AnalysisDOI) pairs
+
+def gen_collections_table(args):
+    BQ_client = bigquery.Client()
+    if not BQ_table_exists(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name):
+        try:
+            table = create_BQ_table(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, third_party_schema)
+        except:
+            print("Error creating table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+                  file=sys.stdout, flush=True)
+            print("Failed to create BQ table")
+            exit()
+    collections, dois, count = id_3rd_party_series(args)
+    for collection in collections:
+        if len(collections[collection]) > 0:
+            ndjson = '\n'.join([json.dumps(series) for series in collections[collection]])
+            job = load_BQ_from_json(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, ndjson, third_party_schema)
+
+            while not job.state == 'DONE':
+                print('Status: {}'.format(job.state))
+                time.sleep(args.period * 60)
+            print("{}: Completed collections metatdata upload for {}".format(time.asctime(), collection))
+
+if __name__ == '__main__':
+    parser =argparse.ArgumentParser()
+    parser.add_argument('--dones_file', default="",
+                        help="Don't generate dones file")
+    parser.add_argument('--collections', default='{}/BQ/lists/idc_mvp_wave_0.txt'.format(os.environ['PWD']),
+                        help="File containing list of IDC collection IDs or 'all' for all collections")
+    parser.add_argument('--bq_dataset_name', default='idc_tcia_mvp_wave0', help='BQ dataset name')
+    parser.add_argument('--bq_table_name', default='idc_tcia_third_party_series', help='BQ table name')
+    parser.add_argument('--region', default='us', help='Dataset region')
+    parser.add_argument('--project', default='idc-dev-etl')
+    args = parser.parse_args()
+    print("{}".format(args), file=sys.stdout)
+    gen_collections_table(args)

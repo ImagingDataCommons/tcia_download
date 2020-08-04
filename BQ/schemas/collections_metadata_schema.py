@@ -2,10 +2,11 @@
 from google.cloud import bigquery
 
 collections_metadata_schema = [
-    bigquery.SchemaField('Collection', 'STRING', mode='NULLABLE'),
-    bigquery.SchemaField('TCIA_CollectionID', 'STRING', mode='NULLABLE'),
-    bigquery.SchemaField('IDC_CollectionID', 'STRING', mode='NULLABLE'),
-    bigquery.SchemaField('Webapp_CollectionID', 'STRING', mode='NULLABLE'),
+    bigquery.SchemaField('NBIA_CollectionID', 'STRING', mode='NULLABLE'),
+    bigquery.SchemaField('TCIA_Webapp_CollectionID', 'STRING', mode='NULLABLE'),
+    bigquery.SchemaField('TCIA_API_CollectionID', 'STRING', mode='NULLABLE'),
+    bigquery.SchemaField('IDC_GCS_CollectionID', 'STRING', mode='NULLABLE'),
+    bigquery.SchemaField('IDC_Webapp_CollectionID', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('Status', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('Updated', 'DATE', mode='NULLABLE'),
     bigquery.SchemaField('Access', 'STRING', mode='NULLABLE'),
