@@ -3,6 +3,7 @@
 # Build the task.tsv file used by run_tasks.py
 # This is in the format expected by dsub but we don't pass to dsub directly lest it launch too many VMs
 
+import os
 import argparse
 
 from helpers.tcia_helpers import get_collection_sizes
@@ -22,7 +23,7 @@ def main(task_file_name):
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', '-f', default='tasks.new.tsv')
+    parser.add_argument('--file', default='{}/tasks.new.tsv'.format(os.environ['PWD']))
     argz = parser.parse_args()
     print(argz)
     main(argz.file)

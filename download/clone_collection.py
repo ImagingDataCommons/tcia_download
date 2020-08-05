@@ -9,9 +9,12 @@ import sys
 import json
 
 sys.path.append(os.environ['CLONE_TCIA'])
-from download.cloner import copy_collection
+# from download.cloner import copy_collection
+from helpers.cloner import copy_collection
 import argparse
 from collections import OrderedDict
+from google.api_core.exceptions import Conflict
+
 
 
 def main(args):
@@ -36,11 +39,11 @@ def main(args):
     #     new_bucket.patch()
 
     # Try to create the destination bucket
-    new_bucket = client.bucket(target_bucket_name)
+    new_bucket = storage_client.bucket(target_bucket_name)
     new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
     new_bucket.versioning_enabled = True
     try:
-        result = client.create_bucket(new_bucket, location='us')
+        result = storage_client.create_bucket(new_bucket, location='us')
         return(0)
     except Conflict:
         # Bucket exists
@@ -103,7 +106,7 @@ def main(args):
 
 if __name__ == "__main__":
 #    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-    print('GOOGLE_APPLICATION_CREDENTIALS: {}'.format(os.environ['GOOGLE_APPLICATION_CREDENTIALS']), file=sys.stderr, flush=True)
+#    print('GOOGLE_APPLICATION_CREDENTIALS: {}'.format(os.environ['GOOGLE_APPLICATION_CREDENTIALS']), file=sys.stderr, flush=True)
     with open(os.environ['GOOGLE_APPLICATION_CREDENTIALS']) as f:
         for line in f:
             print(line, file=sys.stderr, flush=True)

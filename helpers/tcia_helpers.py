@@ -20,7 +20,7 @@ import requests
 # from google.cloud.exceptions import NotFound
 # from google.api_core.exceptions import BadRequest
 
-MAX_RETRIES=10
+MAX_RETRIES=3
 
 def TCIA_API_request(endpoint, parameters=""):  
     retry = 0

@@ -292,7 +292,10 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
     processes = []
     collection_name = tcia_name.replace(' ','_')
     target_bucket_name= '{}{}'.format(TRG_PREFIX, collection_name.lower().replace('_','-'))
-    reference_bucket_name = target_bucket_name.replace(TRG_PREFIX, REF_PREFIX)
+    if REF_PREFIX != "":
+        reference_bucket_name = target_bucket_name.replace(TRG_PREFIX, REF_PREFIX)
+    else:
+        reference_bucket_name = ""
 
     # Collect statistics on each series
     series_statistics = []
@@ -303,8 +306,11 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
         # Determine if the reference archive has this collection. If so, validate
         # against it.
         try:
-            validate = storage_client.lookup_bucket(reference_bucket_name) != None
-            # except BadRequest:
+            if reference_bucket_name != "":
+                validate = storage_client.lookup_bucket(reference_bucket_name) != None
+            else:
+                validate = False
+        # except BadRequest:
         except:
             # Get here if there is an error due to "Bucket is requester pays bucket but no user project provided."
             validate = True
