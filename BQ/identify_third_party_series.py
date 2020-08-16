@@ -8,9 +8,7 @@ from subprocess import run, PIPE
 
 from BQ.gen_collection_id_table import build_collections_id_table
 
-# Generate a list of series that came from some third party analysis
-
-
+# For a specified collection, generate a list of series that came from some third party analysis
 def get_internal_series_ids(collection):
     result = run([
         'curl',
@@ -97,6 +95,8 @@ def id_3rd_party_series(args):
     dones = all_third_party_series_ids.keys()
     dois = []
     count = 0
+
+    # Get a table that maps from NBIA collection names to IDC collection names.
     collection_id_map = build_collections_id_table(args)
     for collection in collection_id_map:
         print(collection)

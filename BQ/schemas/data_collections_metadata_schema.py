@@ -1,7 +1,7 @@
 # This is the schema for the idc_tcia_collections_metadata BQ table
 from google.cloud import bigquery
 
-collections_metadata_schema = [
+data_collections_metadata_schema = [
     bigquery.SchemaField('NBIA_CollectionID', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('TCIA_Webapp_CollectionID', 'STRING', mode='NULLABLE'),
     bigquery.SchemaField('TCIA_API_CollectionID', 'STRING', mode='NULLABLE'),

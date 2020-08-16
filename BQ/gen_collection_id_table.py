@@ -4,12 +4,11 @@ import argparse
 import sys
 import os
 import json
-from helpers.tcia_scrapers import scrape_tcia_collections_page, build_TCIA_to_Description_ID_Table
+from helpers.tcia_scrapers import scrape_tcia_data_collections_page, build_TCIA_to_Description_ID_Table
 from helpers.tcia_helpers import get_collection_descriptions
 
 
-# Create a table that maps from the collection IDs in the NBIA collection description API results,
-# to corresponding TCIA and IDC IDs
+# Create a table that maps between corresponding NBIA, TCIA and IDC collection IDs
 
 def repair_id(src_id):
     if src_id == 'AAPM RT-MAC Grand Challenge 2019':
@@ -30,7 +29,7 @@ def build_collections_id_table(args):
     # Get collection descriptions from NBIA
     collection_descriptions = get_collection_descriptions()
     # Scrape the TCIA Data Collections page for collection metadata
-    collection_metadata = scrape_tcia_collections_page()
+    collection_metadata = scrape_tcia_data_collections_page()
     # Get a table to translate between the 'Collection' collectionID  in the scraped TCIA collection_metadata, and collection id's
     # of the NBIA collections_descriptions
     description_id_map = build_TCIA_to_Description_ID_Table(collection_metadata, collection_descriptions)
