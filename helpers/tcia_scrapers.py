@@ -42,6 +42,9 @@ def scrape_tcia_analysis_collections_page():
             else:
                 trow[header[cid + 1]] = col.text
         if len(trow):
+            # Strip off the http server prefix
+            trow['DOI'] = trow['DOI'].split('doi.org/')[1]
+
             collection = trow.pop('Collection')
             table[collection] = trow
             # table = table + [trow]
@@ -83,15 +86,16 @@ def scrape_tcia_data_collections_page():
             else:
                 trow[header[cid + 1]] = col.text
         if len(trow):
-            collection = trow.pop('Collection')
-            table[collection] = trow
+            # Strip off the http server prefix
+            try:
+                trow['DOI'] = trow['DOI'].split('doi.org/')[1]
+                collection = trow.pop('Collection')
+                table[collection] = trow
+            except:
+                # Some collections do not have doi.org DOIs
+                collection = trow.pop('Collection')
+                table[collection] = trow
 
-    # print(tabulate(table, headers=header))
-
-    # print(len(rows))
-    #
-    # with open("output/collections.json", "w") as f:
-    #   f.write(json.dumps(table, indent=2))
     return table
 
 def build_TCIA_to_Description_ID_Table(collections, descriptions):

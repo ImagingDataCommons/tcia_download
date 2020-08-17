@@ -3,7 +3,7 @@ import argparse
 import os
 import sys
 
-from BQ.gen_BQ_third_party_table import id_3rd_party_series
+from BQ.gen_BQ_seriesUID_to_third_party_table import id_3rd_party_series
 
 # Generate a list of series that came from some third party analysis; for all dev collections
 

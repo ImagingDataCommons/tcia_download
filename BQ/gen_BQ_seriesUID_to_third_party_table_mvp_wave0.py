@@ -3,17 +3,17 @@ import argparse
 import sys
 import os
 import json
-from BQ.gen_BQ_third_party_table import gen_collections_table
+from BQ.gen_BQ_seriesUID_to_third_party_table import gen_collections_table
 
 # Create a BQ table of (SeriesInstanceUID, AnalysisDOI) pairs
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--dones_file', default='{}/lists/third_party_series_dev.json'.format(os.environ['PWD']),
-                        help="Don't generate dones file")
-    parser.add_argument('--collections', default="all",
+    parser.add_argument('--dones_file', default='{}/BQ/lists/third_party_series_mvp_wave0.json'.format(os.environ['PWD']),
+                        help="File in which to record collected third party DOIs.")
+    parser.add_argument('--collections', default='{}/lists/idc_mvp_wave_0.txt'.format(os.environ['PWD']),
                         help="File containing list of IDC collection IDs or 'all' for all collections")
-    parser.add_argument('--bq_dataset_name', default='idc_tcia_dev', help='BQ dataset name')
+    parser.add_argument('--bq_dataset_name', default='idc_tcia_mvp_wave0', help='BQ dataset name')
     parser.add_argument('--bq_table_name', default='idc_tcia_third_party_series', help='BQ table name')
     parser.add_argument('--region', default='us', help='Dataset region')
     parser.add_argument('--project', default='idc-dev-etl')

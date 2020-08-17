@@ -67,12 +67,12 @@ def gen_collections_table(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--file', default='{}/{}'.format(os.environ['PWD'], 'lists/collection_ids.json'),
+    parser.add_argument('--file', default='{}/{}'.format(os.environ['PWD'], 'BQ/lists/collection_ids_mvp_wave0.json'),
                         help='Table to translate between collection IDs ')
-    parser.add_argument('--collections', default='{}/lists/idc_mvp_wave_0.txt'.format(os.environ['PWD']),
-                        help="File containing list of IDC collection IDs or 'all' for all collections")
+    # parser.add_argument('--collections', default='{}/lists/idc_mvp_wave_0.txt'.format(os.environ['PWD']),
+    #                     help="File containing list of IDC collection IDs or 'all' for all collections")
     parser.add_argument('--bqdataset_name', default='idc_tcia_dev', help='BQ dataset name')
-    parser.add_argument('--bqtable_name', default='idc_tcia_data_collections_metadata', help='BQ table name')
+    parser.add_argument('--bqtable_name', default='idc_tcia_data_collections_metadata_test', help='BQ table name')
     parser.add_argument('--region', default='us', help='Dataset region')
     parser.add_argument('--project', default='idc-dev-etl')
 

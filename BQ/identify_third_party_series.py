@@ -74,6 +74,9 @@ def get_3rd_party_series_ids(nbia_collection_id):
         for study in study_metadata:
             for series in study["seriesList"]:
                 uri = series["descriptionURI"]
+                # If it's a doi.org uri, keep just the DOI
+                if 'doi.org' in uri:
+                    uri = uri.split('doi.org/')[1]
                 seriesUID = series["seriesUID"]
                 third_party_series.append({"SeriesInstanceUID": seriesUID, "SourceDOI": uri})
                 if not uri in dois:

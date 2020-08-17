@@ -16,7 +16,8 @@ def build_DOI_list(args):
     DOIs = []
     for collection in third_party_DOIs:
         for map in third_party_DOIs[collection]:
-            DOI = map["SourceDOI"].split('doi.org/')[1]
+            # DOI = map["SourceDOI"].split('doi.org/')[1]
+            DOI = map["SourceDOI"]
             if not DOI in DOIs:
                 DOIs.append(DOI)
     return DOIs
@@ -32,9 +33,10 @@ def build_metadata(args):
     rows = []
     for collection_id, collection_data in collection_metadata.items():
         # print(collection_id)
-        if collection_data["DOI"].split('doi.org/')[1] in DOIs:
+        # if collection_data["DOI"].split('doi.org/')[1] in DOIs:
+        if collection_data["DOI"] in DOIs:
             collection_data["Collection"] = collection_id
-            collection_data["DOI"] = collection_data["DOI"].split('doi.org/')[1]
+            # collection_data["DOI"] = collection_data["DOI"].split('doi.org/')[1]
             rows.append(json.dumps(collection_data))
     metadata = '\n'.join(rows)
     return metadata
