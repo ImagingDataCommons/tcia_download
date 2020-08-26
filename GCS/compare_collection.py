@@ -5,17 +5,7 @@ import os
 import time
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
-
-def get_studies(storage_client, bucket_name):
-    iterator = storage_client.list_blobs(bucket_name, prefix='dicom/', delimiter='/')
-    # pages = storage_client.list_blobs(bucket_name, prefix="dicom/")
-    response = iterator._get_next_page_response()
-    studies = []
-    if 'prefixes' in response:
-        for prefix in response['prefixes']:
-            studies.append(prefix)
-    return studies
-
+from helpers.gcs_helpers import get_studies
 
 
 #Get info on each blob in a collection

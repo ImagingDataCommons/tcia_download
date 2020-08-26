@@ -74,8 +74,8 @@ def create_BQ_table(client, project, dataset, table, schema):
     
 
 
-def delete_BQ_Table(client, dataset, table):
-    table_id = "{}.{}.{}".format(client.project, dataset, table)
+def delete_BQ_Table(client, project, dataset, table):
+    table_id = "{}.{}.{}".format(project, dataset, table)
 
     # If the table does not exist, delete_table raises
     # google.api_core.exceptions.NotFound unless not_found_ok is True.

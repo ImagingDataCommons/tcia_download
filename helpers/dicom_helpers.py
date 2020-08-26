@@ -276,7 +276,7 @@ def import_dicom_instance(
     )
 
     response = request.execute()
-    print("Imported DICOM instance: {}".format(content_uri))
+    # print("Imported DICOM instance: {}".format(content_uri))
 
     return response
 
