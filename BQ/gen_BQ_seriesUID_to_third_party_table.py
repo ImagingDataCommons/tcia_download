@@ -6,7 +6,7 @@ import json
 from os.path import join
 import time
 from google.cloud import bigquery
-from helpers.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json
+from helpers.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, load_BQ_from_json
 from BQ.schemas.third_party_schema import third_party_schema
 from BQ.identify_third_party_series import id_3rd_party_series
 
@@ -14,14 +14,17 @@ from BQ.identify_third_party_series import id_3rd_party_series
 
 def gen_collections_table(args):
     BQ_client = bigquery.Client()
-    if not BQ_table_exists(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name):
-        try:
-            table = create_BQ_table(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, third_party_schema)
-        except:
-            print("Error creating table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
-                  file=sys.stdout, flush=True)
-            print("Failed to create BQ table")
-            exit()
+
+    # Always start out with an empty table
+    if BQ_table_exists(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name):
+        delete_BQ_Table(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name)
+    try:
+        table = create_BQ_table(BQ_client, args.project, args.bq_dataset_name, args.bq_table_name, third_party_schema)
+    except:
+        print("Error creating table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+              file=sys.stdout, flush=True)
+        print("Failed to create BQ table")
+        exit()
     collections, dois, count = id_3rd_party_series(args)
     for collection in collections:
         if len(collections[collection]) > 0:
