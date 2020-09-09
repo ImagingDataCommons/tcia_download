@@ -58,11 +58,11 @@ def change_policy(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--collections', default='lists/idc_tcia_mvp_wave0.txt',
+    parser.add_argument('--collections', default='lists/idc_mvp_wave_0.txt',
                         help="File with list of collection ids to be configured")
     parser.add_argument('--bucket_prefix', default='idc-tcia-', help='With collection ids, identify buckets')
-    parser.add_argument('--requester_pays', default="False", help="If True, enable requester pays")
-    parser.add_argument('--allAuthenticatedUsers', default="False", help="If True, enable allAuthenticatedUsers")
+    parser.add_argument('--requester_pays', default="True", help="If True, enable requester pays")
+    parser.add_argument('--allAuthenticatedUsers', default="True", help="If True, enable allAuthenticatedUsers")
     parser.add_argument('--project', default='canceridc-data', help='Project under which to set policy')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
