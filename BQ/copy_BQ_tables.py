@@ -12,17 +12,18 @@ def copy_tables(args):
     with open(args.tables) as f:
         tables = f.readlines()
     for table in tables:
-        source_table_id = table.strip().split(',')[0].strip()
-        destination_table_id = table.strip().split(',')[1].strip()
+        if table[0] != '#':
+            source_table_id = table.strip().split(',')[0].strip()
+            destination_table_id = table.strip().split(',')[1].strip()
 
-    # source_table_id = "idc-dev-etl.idc_tcia_mvp_wave0.idc_tcia_analysis_collections_metadata"
-    #
-    # destination_table_id = "canceridc-data.idc.analysis_collections_metadata"
+        # source_table_id = "idc-dev-etl.idc_tcia_mvp_wave0.idc_tcia_analysis_collections_metadata"
+        #
+        # destination_table_id = "canceridc-data.idc.analysis_collections_metadata"
 
-        print('Copy {} to {}'.format(source_table_id, destination_table_id))
+            print('Copy {} to {}'.format(source_table_id, destination_table_id))
 
-        job = client.copy_table(source_table_id, destination_table_id)
-        job.result()  # Wait for the job to complete.
+            job = client.copy_table(source_table_id, destination_table_id)
+            job.result()  # Wait for the job to complete.
 
 
 if __name__ == '__main__':
