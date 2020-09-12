@@ -59,7 +59,7 @@ def upload_metadata(args, BQ_client, bucket_name, idc_gcs_collectionID, tcia_api
                 "TCIA_API_CollectionID": tcia_api_collectionID,
                 # "IDC_GCS_CollectionID": idc_gcs_collectionID,
                 "IDC_Webapp_CollectionID": idc_gcs_collectionID.replace('-', '_'),
-                "GCS_URL": '{}#{}'.format(instance.public_url,generation),
+                "GCS_URL": '{}#{}'.format(instance.public_url.replace('https://storage.googleapis.com','gs:/'),generation),
                 "GCS_Bucket": bucket_name,
                 "CRDC_UUIDs": {
                     "Study": None,
