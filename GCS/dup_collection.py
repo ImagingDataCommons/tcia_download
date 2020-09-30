@@ -97,13 +97,8 @@ if __name__ == '__main__':
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='canceridc-data')
     parser.add_argument('--production', type=bool, default='True', help="If a production bucket, enable requester pays, allAuthUsers")
-    # parser.add_argument('--SA', '-a',
-    #         default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-
-    # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
-
     client = storage.Client(project=args.dst_project)
 
     dup_collection(args.src_bucket_name, args.dst_bucket_name, args.src_project, args.dst_project, args.production, client)

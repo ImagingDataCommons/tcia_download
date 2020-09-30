@@ -30,11 +30,7 @@ if __name__ == '__main__':
     parser.add_argument('--dcmdatastore_name', '-s', default='idc_tcia', help='DICOM datastore name')
     parser.add_argument('--bqdataset', default='idc_tcia_dev', help="BQ dataset name")
     parser.add_argument('--bqtable', default='idc_tcia_dicom_metadata', help="BQ table name")
-    # parser.add_argument('--SA', '-a',
-    #         default='{}/.config/gcloud/application_default_config.json'.format(os.environ['HOME']), help='Path to service accoumt key')
     parser.add_argument('--SA', default='', help='Path to service accoumt key')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    # if not args.SA == '':
-    #     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = args.SA
     export_metadata(args)
