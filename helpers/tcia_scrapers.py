@@ -118,8 +118,8 @@ def build_TCIA_to_Description_ID_Table(collections, descriptions):
     '''
     Build a table that maps collections ids from scraped TCIA collection data to collection ids in NBIA collection
     descriptions. The mapping is empirical.
-    collections is a dictionary of collection data indexed by collection name
-    descriptions is a dictionary of collection names indexed by collection name
+    collections is a dictionary of TCIA metadata, indexeded by collection name scraped from TCIA collections page
+    descriptions is a dictionary of NBIA collection names indexed by collection name
     '''
 
     table = {}
@@ -128,8 +128,10 @@ def build_TCIA_to_Description_ID_Table(collections, descriptions):
 
     for id,data in collections.items():
         if data['Access'] == 'Public' and data['ImageTypes'] != 'Pathology':
-            table[id]  = description_ids[difflib.get_close_matches(id.split('(')[0].lower().replace(' ','-').replace('_','-'),
-                                                                   list(description_ids.keys()), 1, 0.5)[0]]
+            best_guess = difflib.get_close_matches(id.split('(')[0].lower().replace(' ','-').replace('_','-'),
+                                                                   list(description_ids.keys()), 1, 0.5)
+            if len(best_guess) > 0:
+                table[id] = description_ids[best_guess[0]]
 
     # Yuch!!. Do some fix ups
     table["AAPM RT-MAC Grand Challenge 2019"] = "AAPM-RT-MAC"
