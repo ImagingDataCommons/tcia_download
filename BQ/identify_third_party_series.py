@@ -1,4 +1,20 @@
 #!/usr/bin/env
+#
+# Copyright 2020, Institute for Systems Biology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 import argparse
 import sys
 import os
@@ -8,9 +24,7 @@ from subprocess import run, PIPE
 
 from BQ.gen_collection_id_table import build_collections_id_table
 
-# Generate a list of series that came from some third party analysis
-
-
+# For a specified collection, generate a list of series that came from some third party analysis
 def get_internal_series_ids(collection):
     result = run([
         'curl',
@@ -76,6 +90,9 @@ def get_3rd_party_series_ids(nbia_collection_id):
         for study in study_metadata:
             for series in study["seriesList"]:
                 uri = series["descriptionURI"]
+                # If it's a doi.org uri, keep just the DOI
+                if 'doi.org' in uri:
+                    uri = uri.split('doi.org/')[1]
                 seriesUID = series["seriesUID"]
                 third_party_series.append({"SeriesInstanceUID": seriesUID, "SourceDOI": uri})
                 if not uri in dois:
@@ -97,6 +114,8 @@ def id_3rd_party_series(args):
     dones = all_third_party_series_ids.keys()
     dois = []
     count = 0
+
+    # Get a table that maps from NBIA collection names to IDC collection names.
     collection_id_map = build_collections_id_table(args)
     for collection in collection_id_map:
         print(collection)

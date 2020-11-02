@@ -1,4 +1,20 @@
 #!/usr/bin/env python
+#
+# Copyright 2020, Institute for Systems Biology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 # import re
 from google.cloud import storage
 import subprocess
@@ -292,7 +308,10 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
     processes = []
     collection_name = tcia_name.replace(' ','_')
     target_bucket_name= '{}{}'.format(TRG_PREFIX, collection_name.lower().replace('_','-'))
-    reference_bucket_name = target_bucket_name.replace(TRG_PREFIX, REF_PREFIX)
+    if REF_PREFIX != "":
+        reference_bucket_name = target_bucket_name.replace(TRG_PREFIX, REF_PREFIX)
+    else:
+        reference_bucket_name = ""
 
     # Collect statistics on each series
     series_statistics = []
@@ -303,8 +322,11 @@ def copy_collection(tcia_name, num_processes, storage_client, project):
         # Determine if the reference archive has this collection. If so, validate
         # against it.
         try:
-            validate = storage_client.lookup_bucket(reference_bucket_name) != None
-            # except BadRequest:
+            if reference_bucket_name != "":
+                validate = storage_client.lookup_bucket(reference_bucket_name) != None
+            else:
+                validate = False
+        # except BadRequest:
         except:
             # Get here if there is an error due to "Bucket is requester pays bucket but no user project provided."
             validate = True

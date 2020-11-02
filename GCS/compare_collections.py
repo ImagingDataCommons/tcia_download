@@ -1,9 +1,39 @@
+#
+# Copyright 2020, Institute for Systems Biology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 import argparse
 import sys
 import os
-import json
 from google.cloud import storage
 from GCS.compare_collection import comp_collection
+
+class Logger(object):
+    def __init__(self,file):
+        self.terminal = sys.stdout
+        self.log = open(file, "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        #this flush method is needed for python 3 compatibility.
+        #this handles the flush command by doing nothing.
+        #you might want to specify some extra behavior here.
+        pass
 
 # Get a list of the buckets corresponding to collections whose metadata is to be added to the BQ table
 def get_buckets(args, storage_client):
@@ -21,22 +51,24 @@ def compare_collections(args):
     try:
         with open(args.dones) as f:
             dones = f.readlines()
-        dones = [done.strip('\n') for done in dones]
+        dones = [done[2:].strip('\n') for done in dones if done[0:2] == ">>"]
     except:
         os.mknod(args.dones)
         dones = []
+
+    sys.stdout = Logger(args.dones)
 
     buckets = get_buckets(args, client)
     for bucket in buckets:
         if not bucket in dones:
             comp_collection(bucket, bucket.replace('idc-tcia-1','idc-tcia'))
-            with open(args.dones, 'a') as f:
-                f.writelines('{}\n'.format(bucket))
+            # with open(args.dones, 'a') as f:
+            #     f.writelines('{}\n'.format(bucket))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dones', default='./logs/compare_collections_dones.txt', help='File of completed collections')
+    parser.add_argument('--dones', default='./GCS/logs/compare_collections_dones.txt', help='File of completed collections')
     parser.add_argument('--collections', default='all',
                         help='File listing collections to add to BQ table, or "all"')
     parser.add_argument('--bucket_prefix', default='idc-tcia-1-',

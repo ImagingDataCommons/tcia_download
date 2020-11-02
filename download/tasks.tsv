@@ -30,7 +30,7 @@ NSCLC-Radiomics-Genomics	gs://idc-dsub-logs/output/nsclc-radiomics-genomics/seri
 Pelvic-Reference-Data	gs://idc-dsub-logs/output/pelvic-reference-data/series_statistics.log	gs://idc-dsub-logs/output/pelvic-reference-data/stdout.log
 RIDER Lung CT	gs://idc-dsub-logs/output/rider-lung-ct/series_statistics.log	gs://idc-dsub-logs/output/rider-lung-ct/stdout.log
 TCGA-PRAD	gs://idc-dsub-logs/output/tcga-prad/series_statistics.log	gs://idc-dsub-logs/output/tcga-prad/stdout.log
-LGG-1ppip3 uninstallDeletion	gs://idc-dsub-logs/output/lgg-1p19qdeletion/series_statistics.log	gs://idc-dsub-logs/output/lgg-1p19qdeletion/stdout.log
+LGG-1p19qDeletion	gs://idc-dsub-logs/output/lgg-1p19qdeletion/series_statistics.log	gs://idc-dsub-logs/output/lgg-1p19qdeletion/stdout.log
 HNSCC-3DCT-RT	gs://idc-dsub-logs/output/hnscc-3dct-rt/series_statistics.log	gs://idc-dsub-logs/output/hnscc-3dct-rt/stdout.log
 TCGA-CESC	gs://idc-dsub-logs/output/tcga-cesc/series_statistics.log	gs://idc-dsub-logs/output/tcga-cesc/stdout.log
 Pancreas-CT	gs://idc-dsub-logs/output/pancreas-ct/series_statistics.log	gs://idc-dsub-logs/output/pancreas-ct/stdout.log

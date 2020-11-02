@@ -18,20 +18,32 @@ import os
 
 from google.auth.transport import requests
 from google.oauth2 import service_account
+from google.auth import default
 
 _BASE_URL = "https://healthcare.googleapis.com/v1"
 
 
 def get_session():
     """Creates an authorized Requests Session."""
-    credentials = service_account.Credentials.from_service_account_file(
-        filename=os.environ["GOOGLE_APPLICATION_CREDENTIALS"],
-        scopes=["https://www.googleapis.com/auth/cloud-platform"],
-    )
+    # credentials = service_account.Credentials.from_service_account_file(
+    #     filename=os.environ["GOOGLE_APPLICATION_CREDENTIALS"],
+    #     scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    # )
+    credentials, project = default()
 
     # Create a requests Session object with the credentials.
     session = requests.AuthorizedSession(credentials)
     return session
+# def get_session():
+#     """Creates an authorized Requests Session."""
+#     credentials = service_account.Credentials.from_service_account_file(
+#         filename=os.environ["GOOGLE_APPLICATION_CREDENTIALS"],
+#         scopes=["https://www.googleapis.com/auth/cloud-platform"],
+#     )
+#
+#     # Create a requests Session object with the credentials.
+#     session = requests.AuthorizedSession(credentials)
+#     return session
 
 
 # [START healthcare_dicomweb_store_instance]
@@ -281,6 +293,31 @@ def dicomweb_delete_study(
 
 
 # [END healthcare_dicomweb_delete_study]
+def dicomweb_delete_series(
+    base_url, project_id, cloud_region, dataset_id, dicom_store_id, study_uid, series_uid
+):
+    """Handles DELETE requests equivalent to the GET requests specified in
+    the WADO-RS standard.
+    """
+    url = "{}/projects/{}/locations/{}".format(base_url, project_id, cloud_region)
+
+    dicomweb_path = "{}/datasets/{}/dicomStores/{}/dicomWeb/studies/{}/series/{}".format(
+        url, dataset_id, dicom_store_id, study_uid, series_uid
+    )
+
+    # Make an authenticated API request
+    session = get_session()
+
+    headers = {"Content-Type": "application/dicom+json; charset=utf-8"}
+
+    response = session.delete(dicomweb_path, headers=headers)
+    response.raise_for_status()
+
+#    print("Deleted series.")
+
+    return response
+
+
 
 
 def parse_command_line_args():
