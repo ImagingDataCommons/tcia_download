@@ -16,6 +16,7 @@
 #
 
 # Clone a TCIA collection to GCS
+# This module is intended to be run under dsub, driven by run_tasks.py, and calls cloner.py to do the real work
 
 from google.cloud import storage
 import time
