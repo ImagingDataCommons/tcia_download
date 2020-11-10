@@ -6,4 +6,4 @@ foo
 helpers/__pycache__/
 logs/
 results/
-tasks.new.tsv
+download/tasks.new.tsv

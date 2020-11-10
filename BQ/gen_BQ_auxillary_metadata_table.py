@@ -158,7 +158,7 @@ def gen_aux_table(args):
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
-    parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'], '../lists/idc_mvp_wave_0.txt'),
+    parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'], '../lists/idc_mvp_wave_1.txt'),
                         help='File listing collections to add to BQ table, or "all"')
     parser.add_argument('--bucket_prefix', default='idc-tcia-')
     parser.add_argument('--gch_dataset_name', default='idc_tcia_mvp_wave0', help='DICOM dataset name')

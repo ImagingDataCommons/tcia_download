@@ -29,13 +29,16 @@ from helpers.tcia_scrapers import scrape_tcia_analysis_collections_page, build_T
 def build_DOI_list(args):
     with open(args.third_party_DOIs_file) as f:
         third_party_DOIs = json.load(f)
+    with open(args.exclude) as f:
+        excluded = f.read().splitlines()
     DOIs = []
     for collection in third_party_DOIs:
         for map in third_party_DOIs[collection]:
             # DOI = map["SourceDOI"].split('doi.org/')[1]
             DOI = map["SourceDOI"]
             if not DOI in DOIs:
-                DOIs.append(DOI)
+                if not DOI in excluded:
+                    DOIs.append(DOI)
     return DOIs
 
 
@@ -71,6 +74,7 @@ if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--third_party_DOIs_file', default='{}/{}'.format(os.environ['PWD'], 'lists/third_party_series_dev.json'),
                         help='Table of series/DOI pairs ')
+    parser.add_argument('--exclude', default='', help='File containing list of DOIs to exclude; Excluse none if not specified')
     parser.add_argument('--bqdataset_name', default='idc_tcia_dev', help='BQ dataset name')
     parser.add_argument('--bqtable_name', default='idc_tcia_analysis_collections_metadata', help='BQ table name')
     parser.add_argument('--region', default='us', help='Dataset region')
