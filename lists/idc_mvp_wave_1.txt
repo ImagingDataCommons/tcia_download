@@ -1,12 +1,6 @@
-C4KC-KiTS
-HNSCC
 ISPY1
 LIDC-IDRI
-NSCLC-Radiogenomics
 NSCLC-Radiomics
-NSCLC-Radiomics-Genomics
-NSCLC-Radiomics-Interobserver1
-PROSTATEx
 QIN-HeadNeck
 TCGA-BLCA
 TCGA-BRCA

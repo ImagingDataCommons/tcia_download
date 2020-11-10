@@ -92,11 +92,11 @@ def dup_collection(src_bucket_name, dst_bucket_name, src_project, dst_project, p
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src_bucket_name', default='idc-tcia-1-rider-lung-ct')
-    parser.add_argument('--dst_bucket_name', default='idc-tcia-rider-lung-ct')
+    parser.add_argument('--src_bucket_name', default='idc-tcia-1-nsclc-radiomics')
+    parser.add_argument('--dst_bucket_name', default='idc-tcia-nsclc-radiomics')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='canceridc-data')
-    parser.add_argument('--production', type=bool, default='True', help="If a production bucket, enable requester pays, allAuthUsers")
+    parser.add_argument('--production', type=bool, default='False', help="If a production bucket, enable requester pays, allAuthUsers")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     client = storage.Client(project=args.dst_project)

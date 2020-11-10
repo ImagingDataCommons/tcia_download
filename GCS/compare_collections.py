@@ -61,17 +61,17 @@ def compare_collections(args):
     buckets = get_buckets(args, client)
     for bucket in buckets:
         if not bucket in dones:
-            comp_collection(bucket, bucket.replace('idc-tcia-1','idc-tcia'))
+            comp_collection(args.project, bucket, bucket.replace('idc-tcia', (args.bucket_prefix)))
             # with open(args.dones, 'a') as f:
             #     f.writelines('{}\n'.format(bucket))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dones', default='./GCS/logs/compare_collections_dones.txt', help='File of completed collections')
-    parser.add_argument('--collections', default='all',
-                        help='File listing collections to add to BQ table, or "all"')
-    parser.add_argument('--bucket_prefix', default='idc-tcia-1-',
+    parser.add_argument('--dones', default='./logs/compare_collections_dones.txt', help='File of completed collections')
+    parser.add_argument('--collections', default='../lists/idc_mvp_wave_1.txt',
+                        help='File listing collections to compare to BQ table, or "all"')
+    parser.add_argument('--bucket_prefix', default='idc-tcia-1',
                         help='File listing collections to add to BQ table, or "all"')
     parser.add_argument('--project', default='idc-dev-etl', help="Project of the GCS, BQ and GCH tables")
     parser.add_argument('--SA', default='', help='Path to service accoumt key')
