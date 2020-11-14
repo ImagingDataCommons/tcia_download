@@ -31,7 +31,7 @@ def get_bucket_info(bucket_name, project, storage_client):
 
 def bucket_was_copied(src_bucket_name, dst_bucket_name, src_project, dst_project, production, client):
     # Try to create the destination bucket
-    new_bucket = client.bucket(dst_bucket_name)
+    new_bucket = client.bucket(dst_bucket_name, user_project=args.dst_project)
     new_bucket.iam_configuration.uniform_bucket_level_access_enabled = True
     new_bucket.versioning_enabled = True
     try:
@@ -45,6 +45,9 @@ def bucket_was_copied(src_bucket_name, dst_bucket_name, src_project, dst_project
                 "members": {"allAuthenticatedUsers"}
             })
             new_bucket.set_iam_policy(policy)
+
+        # Enable logging
+        result = run(['gsutil',  '-u', args.dst_project, 'set', 'on', '-b', "gs://canceridc-data-storage-logs", "gs://idc-tcia-nsclc-radiomics"])
         return(0)
     except Conflict:
         # Bucket exists
@@ -62,8 +65,8 @@ def dup_collection(src_bucket_name, dst_bucket_name, src_project, dst_project, p
         # Not previously copied
         print("Copying {}".format(src_bucket_name), flush=True)
         try:
-            result = run(['gsutil', '-m', '-q', 'cp', '-r',
-                    'gs://{}/*'.format(src_bucket_name), 'gs://{}/'.format(dst_bucket_name)], stdout=PIPE, stderr=PIPE)
+            result = run(['gsutil', '-u', args.dst_project, '-m', '-q', 'cp', '-r',
+                                        'gs://{}/*'.format(src_bucket_name), 'gs://{}/'.format(dst_bucket_name)], stdout=PIPE, stderr=PIPE)
             print("   {} copied, results: {}".format(src_bucket_name, result), flush=True)
             if result.returncode:
                 print('Copy {} failed: {}'.format(result.stderr), flush=True)
@@ -96,9 +99,12 @@ if __name__ == '__main__':
     parser.add_argument('--dst_bucket_name', default='idc-tcia-nsclc-radiomics')
     parser.add_argument('--src_project', default='idc-dev-etl')
     parser.add_argument('--dst_project', default='canceridc-data')
-    parser.add_argument('--production', type=bool, default='False', help="If a production bucket, enable requester pays, allAuthUsers")
+    parser.add_argument('--production', type=bool, default='True', help="If a production bucket, enable requester pays, allAuthUsers")
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     client = storage.Client(project=args.dst_project)
+
+    print("******Validate that new code to enable logging is working******")
+    exit()
 
     dup_collection(args.src_bucket_name, args.dst_bucket_name, args.src_project, args.dst_project, args.production, client)
