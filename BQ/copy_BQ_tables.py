@@ -43,7 +43,7 @@ def copy_tables(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tables', default='lists/tables.txt',
+    parser.add_argument('--tables', default='lists/copy_mvp_wave1_tables.txt',
                         help='Tables (source/destination) to copy')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
