@@ -27,10 +27,10 @@ RUN python3 -m pip -q install pydicom
 RUN python3 -m pip -q install --upgrade google-cloud-storage
 RUN python3 -m pip -q install --upgrade google-cloud-bigquery
 RUN mkdir /root/clone_tcia
-#RUN mkdir /root/clone_tcia/helpers
+#RUN mkdir /root/clone_tcia/utilities
 #COPY clone_collection.py /root/clone_tcia
 COPY application_default_config.json /root/clone_tcia
-#COPY helpers/* /root/clone_tcia/helpers/
+#COPY utilities/* /root/clone_tcia/utilities/
 ENV GOOGLE_APPLICATION_CREDENTIALS=/root/clone_tcia/application_default_config.json
 CMD ["/bin/bash"]
 

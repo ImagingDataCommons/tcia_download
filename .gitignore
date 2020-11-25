@@ -3,7 +3,7 @@
 .idea
 env/
 foo
-helpers/__pycache__/
+utilities/__pycache__/
 logs/
 results/
 download/tasks.new.tsv

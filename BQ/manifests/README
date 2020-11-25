@@ -1,0 +1,11 @@
+This folder holds contains scripts and data for generating manifests as input to the CRDC indexing process.
+Basically, the process is
+1. Auxilliary_metadata is populated/updated
+2. A BQ query is executed that generates a table of new/changed instances. The table is copied to GCS,
+and uploaded to CRDC. The manifest output by CRDC is copied to GCS.
+3. Add the new instance UUIDs to crdc_uuids BQ table
+4. A BQ query is executed that generates a table of new/changed studies/series. The table is copied to GCS,
+and uploaded to CRDC. The manifest output by CRDC is copied to GCS.
+5. Add the new study/series UUIDs to crdc_uuids BQ table
+
+

@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 #
 # Copyright 2020, Institute for Systems Biology
 #
@@ -15,11 +15,8 @@
 # limitations under the License.
 #
 
-# Copy files to GCS, from where they will be accessible by run_tasks.py instantiation of clone_collection.py on a VM
-# that will download a collection from TCIA
+virtualenv env
+source env/bin/activate
 
-gsutil cp __init__.py gs://idc-dsub-mount/__init__.py
-gsutil cp clone_collection.py gs://idc-dsub-mount/clone_collection.py
-gsutil cp utilities/cloner.py gs://idc-dsub-mount/utilities/cloner.py
-gsutil cp ../utilities/__init__.py gs://idc-dsub-mount/utilities/__init__.py
-gsutil cp ../utilities/tcia_helpers.py gs://idc-dsub-mount/utilities/tcia_helpers.py
+pip install dsub
+#export GOOGLE_APPLICATION_CREDENTIALS=$HOME/.config/gcloud/application_default_config.json
