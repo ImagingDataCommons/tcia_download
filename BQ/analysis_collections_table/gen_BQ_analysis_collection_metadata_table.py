@@ -21,9 +21,9 @@ import os
 import json
 import time
 from google.cloud import bigquery
-from helpers.bq_helpers import load_BQ_from_json
+from utilities.bq_helpers import load_BQ_from_json
 from BQ.analysis_collections_table.schemas.analysis_collections_metadata_schema import analysis_collections_metadata_schema
-from helpers.tcia_scrapers import scrape_tcia_analysis_collections_page
+from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
 
 
 # Build a table of all the DOIs in a particular release

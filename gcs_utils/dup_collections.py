@@ -21,7 +21,7 @@ import sys
 import argparse
 from multiprocessing import Process, Queue
 
-from download.gcs_utils.dup_collection import dup_collection
+from gcs_utils import dup_collection
 
 # def get_bucket_info(bucket_name, project, storage_client):
 #     # print('get_series_info args, bucket_name: {}, study: {}, series: {}, storage_client: {}'.format(

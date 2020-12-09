@@ -18,7 +18,7 @@ import argparse
 import sys
 import os
 from google.cloud import storage
-from download.gcs_utils.compare_collection import comp_collection
+from gcs_utils.compare_collection import comp_collection
 
 class Logger(object):
     def __init__(self,file):

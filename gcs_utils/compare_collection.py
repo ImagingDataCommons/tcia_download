@@ -21,7 +21,7 @@ import os
 import time
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
-from helpers.gcs_helpers import get_studies
+from utilities.gcs_helpers import get_studies
 
 
 #Get info on each blob in a collection
@@ -81,9 +81,9 @@ def comp_collection(project, bucket_a_name, bucket_b_name):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bucket_a_name', default='idc-tcia-1-nsclc-radiomics',
+    parser.add_argument('--bucket_a_name', default='idc-tcia-1-tcga-lgg',
                         help='Bucket to compare')
-    parser.add_argument('--bucket_b_name', default='idc-tcia-1-nsclc-radiomics',
+    parser.add_argument('--bucket_b_name', default='idc-tcia-1-tcga-gbm',
                         help='Bucket to compare')
     # parser.add_argument('--region', default='us-central1', help='Dataset region')
     parser.add_argument('--project', default='idc-dev-etl', help="Project of the GCS, BQ and GCH tables")

@@ -19,6 +19,16 @@ from google.cloud import bigquery
 
 auxilliary_metadata_schema = [
     bigquery.SchemaField(
+        name="StudyInstanceUID",
+        field_type="STRING",
+        mode="REQUIRED",
+        description="SOPInstanceUID of this instance"),
+    bigquery.SchemaField(
+        name="SeriesInstanceUID",
+        field_type="STRING",
+        mode="REQUIRED",
+        description="SOPInstanceUID of this instance"),
+    bigquery.SchemaField(
         name="SOPInstanceUID",
         field_type="STRING",
         mode="REQUIRED",

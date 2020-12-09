@@ -18,6 +18,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 import io
 import sys
+import time
 
 
 def create_BQ_dataset(client, name, description=""):
@@ -73,21 +74,13 @@ def BQ_table_exists(BQ_client, project, dataset, table):
 
 
 def create_BQ_table(client, project, dataset, table, schema):
+
     table_id = "{}.{}.{}".format(project, dataset, table)
+
     table = bigquery.Table(table_id, schema=schema)
+
     table = client.create_table(table)  # Make an API request.
     return table
-
-# table = create_BQ_table(BQ_client,'etl_metadata', 'etl_metadata', schema)
-# print(
-#     "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
-# )
-
-# if BQ_table_exists(BQ_client, 'etl_metadata', 'etl_metadata'):
-#     print("Table already exists.")
-# else:
-#     print("Table is not found.")
-    
 
 
 def delete_BQ_Table(client, project, dataset, table):
@@ -110,11 +103,15 @@ def load_BQ_from_json(client, project, dataset, table, json_rows, aschema):
     #     print(json_rows)
     try:
         job = client.load_table_from_file(data, table_id, job_config=job_config)
+        while not job.result().state == 'DONE':
+            print('Waiting for job done. Status: {}'.format(job.state))
+            time.sleep(15)
+        result = job.result()
     except:
         print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)
+        raise
 
-    result = job.result()
     return result
 
 
@@ -133,9 +130,52 @@ def load_BQ_from_CSV(client, dataset, table, csv_rows, aschema):
     #     print(json_rows)
     try:
         job = client.load_table_from_file(data, table_id, job_config=job_config)
+        while not job.result().state == 'DONE':
+            print('Waiting for job done. Status: {}'.format(job.state))
+            time.sleep(15)
+        result = job.result()
+    except:
+        print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+              file=sys.stdout, flush=True)
+        raise
+    return job
+
+# load a file at some uri. Assumes a csv or tsv (default).
+def load_BQ_from_uri(client, dataset, table, uri, schema, delimiter='\t', skip=1, write_disposition = 'WRITE_APPEND' ):
+
+    table_id = "{}.{}.{}".format(client.project, dataset, table)
+
+    job_config = bigquery.LoadJobConfig()
+    job_config.source_format = bigquery.SourceFormat.CSV
+    job_config.write_disposition = write_disposition
+    job_config.field_delimiter = delimiter
+    job_config.skip_leading_rows = skip
+    job_config.schema = schema
+
+    try:
+        job = client.load_table_from_uri(uri, table_id, job_config=job_config)
+        while not job.result().state == 'DONE':
+            print('Waiting for job done. Status: {}'.format(job.state))
+            time.sleep(15)
+        result = job.result()
+    except:
+        print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+              file=sys.stdout, flush=True)
+
+
+# load a file at some uri. Assumes a csv or tsv (default).
+def query_BQ(client, dataset, table, sql, write_disposition = 'WRITE_APPEND' ):
+
+    table_id = "{}.{}.{}".format(client.project, dataset, table)
+
+    job_config = bigquery.QueryJobConfig(destination=table_id)
+    job_config.write_disposition = write_disposition
+
+    try:
+        job = client.query(sql, job_config=job_config)
     except:
         print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)
 
     result = job.result()
-    return job
+    return result

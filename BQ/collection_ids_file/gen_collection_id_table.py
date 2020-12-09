@@ -19,8 +19,8 @@ import argparse
 import sys
 import os
 import json
-from helpers.tcia_scrapers import scrape_tcia_data_collections_page, build_TCIA_to_Description_ID_Table
-from helpers.tcia_helpers import get_collection_descriptions, get_TCIA_collections
+from utilities.tcia_scrapers import scrape_tcia_data_collections_page, build_TCIA_to_Description_ID_Table
+from utilities.tcia_helpers import get_collection_descriptions, get_TCIA_collections
 
 
 # Create a table that maps between corresponding NBIA, TCIA and IDC collection IDs

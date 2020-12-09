@@ -21,10 +21,10 @@ import os
 import json
 import time
 from google.cloud import bigquery
-from helpers.bq_helpers import load_BQ_from_json
+from utilities.bq_helpers import load_BQ_from_json
 from BQ.data_collections_table.schemas.data_collections_metadata_schema import data_collections_metadata_schema
-from helpers.tcia_helpers import get_collection_descriptions
-from helpers.tcia_scrapers import scrape_tcia_data_collections_page, build_TCIA_to_Description_ID_Table
+from utilities.tcia_helpers import get_collection_descriptions
+from utilities.tcia_scrapers import scrape_tcia_data_collections_page, build_TCIA_to_Description_ID_Table
 
 def build_metadata(args):
     # Get collection descriptions from TCIA
