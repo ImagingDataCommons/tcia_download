@@ -161,6 +161,7 @@ def load_BQ_from_uri(client, dataset, table, uri, schema, delimiter='\t', skip=1
     except:
         print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)
+        raise
 
 
 # load a file at some uri. Assumes a csv or tsv (default).
@@ -179,3 +180,20 @@ def query_BQ(client, dataset, table, sql, write_disposition = 'WRITE_APPEND' ):
 
     result = job.result()
     return result
+
+def copy_BQ_table(client, src_table, dst_table, create_disposition='CREATE_IF_NEEDED',
+                  write_disposition = 'WRITE_APPEND'):
+    config = bigquery.CopyJobConfig()
+    config.create_disposition = create_disposition
+    config.write_disposition = write_disposition
+
+    try:
+        job = client.copy_table(src_table, dst_table, job_config=config)
+        while not job.result().state == 'DONE':
+            print('Waiting for job done. Status: {}'.format(job.state))
+            time.sleep(15)
+        result = job.result()
+    except:
+        print("Error loading copying table: {}.{}.{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+              file=sys.stdout, flush=True)
+        raise

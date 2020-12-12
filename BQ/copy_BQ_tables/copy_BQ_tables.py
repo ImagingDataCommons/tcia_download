@@ -17,6 +17,9 @@
 import argparse
 import sys
 from google.cloud import bigquery
+from utilities.bq_helpers import  copy_BQ_table
+
+# Copy BQ tables. The source and destination tables are listed in a file.
 
 def copy_tables(args):
 
@@ -29,15 +32,11 @@ def copy_tables(args):
             source_table_id = table.strip().split(',')[0].strip()
             destination_table_id = table.strip().split(',')[1].strip()
 
-        # source_table_id = "idc-dev-etl.idc_tcia_mvp_wave0.idc_tcia_analysis_collections_metadata"
-        #
-        # destination_table_id = "canceridc-data.idc.analysis_collections_metadata"
-
             print('Copy {} to {}'.format(source_table_id, destination_table_id))
 
-            job = client.copy_table(source_table_id, destination_table_id)
-            job.result()  # Wait for the job to complete.
-
+            # job = client.copy_table(source_table_id, destination_table_id)
+            # job.result()  # Wait for the job to complete.
+            result = copy_BQ_table(client, source_table_id, destination_table_id, write_disposition='WRITE_TRUNCATE')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

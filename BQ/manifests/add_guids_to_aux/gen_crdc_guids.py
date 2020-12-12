@@ -25,9 +25,9 @@ import sys
 import os
 import json
 import time
-from BQ.manifests.crdc_guids_table.schemas.crdc_manifest import crdc_blob_manifests_schema, \
+from BQ.manifests.add_guids_to_aux.schemas.crdc_manifest import crdc_blob_manifests_schema, \
     crdc_study_bundle_manifests_schema, crdc_series_bundle_manifests_schema
-from BQ.manifests.crdc_guids_table.schemas.crdc_guids import crdc_guids_schema
+from BQ.manifests.add_guids_to_aux.schemas.crdc_guids import crdc_guids_schema
 from google.cloud import bigquery, storage
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table, create_BQ_table, load_BQ_from_uri, query_BQ
 from BQ.analysis_collections_table.schemas.analysis_collections_metadata_schema import analysis_collections_metadata_schema

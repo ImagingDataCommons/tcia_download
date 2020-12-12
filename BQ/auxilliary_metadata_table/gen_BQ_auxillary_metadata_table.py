@@ -22,7 +22,7 @@ import json
 import time
 from google.cloud import storage
 from google.cloud import bigquery
-from utilities.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json, query_BQ, delete_BQ_Table
+from utilities.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json, delete_BQ_Table, copy_BQ_table
 from BQ.auxilliary_metadata_table.schemas.auxilliary_metadata import auxilliary_metadata_schema
 from utilities.tcia_helpers import get_TCIA_collections
 
@@ -60,6 +60,17 @@ def get_buckets(args, storage_client):
 
 def upload_metadata(args, BQ_client, bucket_name, idc_gcs_collectionID, tcia_api_collectionID, storage_client):
     print("{}: Uploading metadata for {}".format(time.asctime(), bucket_name), flush=True)
+
+    # Create a temporary table to hold a single collection
+    table = delete_BQ_Table(BQ_client, args.bq_project, args.dataset, args.temp_table)
+    try:
+        table = create_BQ_table(BQ_client, args.bq_project, args.dataset, args.temp_table, auxilliary_metadata_schema)
+    except:
+        print("Error creating temp table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+              file=sys.stdout, flush=True)
+        print("Failed to create BQ table")
+        raise
+
     pages = get_collection_iterator(args, bucket_name, storage_client)
 
     rows = []
@@ -100,45 +111,68 @@ def upload_metadata(args, BQ_client, bucket_name, idc_gcs_collectionID, tcia_api
             rows.append(json.dumps(row))
             total_rows+=1
         processed_pages += 1
-        if processed_pages % 10 == 0:
+        if processed_pages % 50 == 0:
             metadata = '\n'.join(rows)
             result = load_BQ_from_json(BQ_client, args.bq_project, args.dataset, args.aux_table, metadata,
                                        auxilliary_metadata_schema)
             if not result.errors == None:
                 print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors), flush=True)
-                return -1
+                raise
             print("    {}: Completed {} rows {}".format(time.asctime(), total_rows, bucket_name), flush=True)
             rows = []
     metadata = '\n'.join(rows)
-    result = load_BQ_from_json(BQ_client, args.bq_project, args.dataset, args.aux_table, metadata,
+    result = load_BQ_from_json(BQ_client, args.bq_project, args.dataset, args.temp_table, metadata,
                                auxilliary_metadata_schema)
     if not result.errors == None:
         print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors), flush=True)
-        return -1
+        raise
     print("    {}: Completed {} rows {}".format(time.asctime(), total_rows, bucket_name), flush=True)
 
-    return 0
+    return
 
 def gen_aux_table_no_uuids(storage_client, BQ_client, args):
     idc_gcs_to_tcia_api_collection_ID_dict = get_idc_gcs_to_tcia_api_collection_ID_dict()
+    if not BQ_table_exists(BQ_client, args.bq_project, args.dataset, args.aux_table):
+        try:
+            table = create_BQ_table(BQ_client, args.bq_project, args.dataset, args.aux_table, auxilliary_metadata_schema)
+        except:
+            print("Error creating table auxilliary_metadata: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+                  file=sys.stdout, flush=True)
+            print("Failed to create BQ table")
+            exit()
+    if not os.path.exists(os.path.dirname(args.dones)):
+        try:
+            os.makedirs(os.path.dirname(args.dones))
+        except OSError as exc:  # Guard against race condition
+            print("Error creating dones table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+                  file=sys.stdout, flush=True)
+            print("Failed to create BQ table")
+            exit()
 
-    # Start with an empty table
-    table = delete_BQ_Table(BQ_client, args.bq_project, args.dataset, args.aux_table)
     try:
-        table = create_BQ_table(BQ_client, args.bq_project, args.dataset, args.aux_table, auxilliary_metadata_schema)
+        with open(args.dones) as f:
+            dones = f.readlines()
+        dones = [done.strip('\n') for done in dones]
     except:
-        print("Error creating table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
-              file=sys.stdout, flush=True)
-        print("Failed to create BQ table")
-        exit()
+        os.mknod(args.dones)
+        dones = []
 
     buckets = get_buckets(args, storage_client)
     for bucket in buckets:
-        # if not bucket in dones:
-        idc_gc_collectionID = bucket.split(args.bucket_prefix)[1]
-        tcia_api_collectionID = idc_gcs_to_tcia_api_collection_ID_dict[idc_gc_collectionID]
-        result = upload_metadata(args, BQ_client, bucket, idc_gc_collectionID, tcia_api_collectionID, storage_client)
-        print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket), flush=True)
+        if not bucket in dones:
+            idc_gc_collectionID = bucket.split(args.bucket_prefix)[1]
+            tcia_api_collectionID = idc_gcs_to_tcia_api_collection_ID_dict[idc_gc_collectionID]
+            result = upload_metadata(args, BQ_client, bucket, idc_gc_collectionID, tcia_api_collectionID, storage_client)
+
+            # Now append the per-collection temp table to auxilliary_metadata table
+            src_table = "{}.{}.{}".format(BQ_client.project, args.dataset, args.temp_table)
+            dst_table = "{}.{}.{}".format(BQ_client.project, args.dataset, args.aux_table)
+            result =  copy_BQ_table(BQ_client, src_table, dst_table)
+
+            # We now need to append the contents of the temp table to the aux table
+            print("{}: Completed metatdata upload for {}\n".format(time.asctime(), bucket), flush=True)
+            with open(args.dones,'a') as f:
+                f.writelines('{}\n'.format(bucket))
 
 
 def gen_aux_table(args):
@@ -147,16 +181,6 @@ def gen_aux_table(args):
 
     # Generate the auxilliary_metadata table. It will not yet include crdc uuids
     gen_aux_table_no_uuids(storage_client, BQ_client, args)
-
-    # # Now join the crdc_uuids table to the auxilliary_metadata table
-    # aux = "{}.{}.{}".format(args.bq_project, args.dataset, args.aux_table)
-    # uuids = "{}.{}.{}".format(args.bq_project, args.dataset, args.uuid_table)
-    # dicom_metadata = "{}.{}.{}".format(args.bq_project, args.dataset, args.dicom_metadata_table)
-    # # add_crdc_uuids(BQ_client, args)
-    # with open(args.sql) as f:
-    #     sql = f.read().format(aux=aux, uuids=uuids, dcm=dicom_metadata)
-    #
-    # result = query_BQ(BQ_client, args.dataset, args.aux_table, sql, 'WRITE_TRUNCATE')
 
 
 if __name__ == '__main__':
@@ -167,10 +191,14 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', default='whc_dev', help='BQ dataset name')
     parser.add_argument('--aux_table', default='idc_tcia_auxilliary_metadata', \
                         help='BQ auxilliary_metadata table name')
+    parser.add_argument('--temp_table', default='idc_tcia_collection_metadata', \
+                        help='Temporary table in which collection metadata is built before appending to auxilliary_metadata')
     parser.add_argument('--region', default='us', help='GCS region')
     parser.add_argument('--gcs_project', default='idc-dev-etl', help="Project of the GCS tables")
     parser.add_argument('--bq_project', default='idc-dev-etl', help="Project of the BQ table to be created")
     parser.add_argument('--version', default='1', help='IDC version')
+    parser.add_argument('--dones', default='./logs/gen_BQ_auxilliary_metadata_table_dones_dev.txt', \
+                        help='File of completed collections')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
     gen_aux_table(args)
