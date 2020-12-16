@@ -22,9 +22,14 @@ from BQ.auxilliary_metadata_table.gen_BQ_auxillary_metadata_table import gen_aux
 parser = argparse.ArgumentParser()
 parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'], '../../lists/idc_mvp_wave_1.txt'),
                     help='File listing collections to add to BQ table, or "all"')
+parser.add_argument(('--join_metadata_to_aux_sql_file'), default='./sql/join_dicom_metadata_to_aux_metadata.sql')
 parser.add_argument('--bucket_prefix', default='idc-tcia-')
 parser.add_argument('--dataset', default='idc_tcia_mvp_wave1', help='BQ dataset name')
-parser.add_argument('--aux_table', default='idc_tcia_auxilliary_metadata', \
+parser.add_argument('--dicom_metadata_table', default='idc_tcia_dicom_metadata', \
+                    help='BQ dicom metadata table name')
+parser.add_argument('--aux_src_table', default='idc_tcia_auxilliary_metadata_no_guids', \
+                    help='BQ auxilliary_metadata table name')
+parser.add_argument('--aux_dst_table', default='idc_tcia_auxilliary_metadata_no_guids_trimmed', \
                     help='BQ auxilliary_metadata table name')
 parser.add_argument('--temp_table', default='idc_tcia_collection_metadata', \
                     help='Temporary table in which collection metadata is built before appending to auxilliary_metadata')

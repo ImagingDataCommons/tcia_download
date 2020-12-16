@@ -22,7 +22,8 @@ import json
 import time
 from google.cloud import storage
 from google.cloud import bigquery
-from utilities.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json, delete_BQ_Table, copy_BQ_table
+from utilities.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_json, delete_BQ_Table, copy_BQ_table, \
+    query_BQ
 from BQ.auxilliary_metadata_table.schemas.auxilliary_metadata import auxilliary_metadata_schema
 from utilities.tcia_helpers import get_TCIA_collections
 
@@ -113,7 +114,7 @@ def upload_metadata(args, BQ_client, bucket_name, idc_gcs_collectionID, tcia_api
         processed_pages += 1
         if processed_pages % 50 == 0:
             metadata = '\n'.join(rows)
-            result = load_BQ_from_json(BQ_client, args.bq_project, args.dataset, args.aux_table, metadata,
+            result = load_BQ_from_json(BQ_client, args.bq_project, args.dataset, args.aux_src_table, metadata,
                                        auxilliary_metadata_schema)
             if not result.errors == None:
                 print('****{}: Error {} during BQ upload {}'.format(time.asctime(), bucket_name, result.errors), flush=True)
@@ -132,9 +133,9 @@ def upload_metadata(args, BQ_client, bucket_name, idc_gcs_collectionID, tcia_api
 
 def gen_aux_table_no_uuids(storage_client, BQ_client, args):
     idc_gcs_to_tcia_api_collection_ID_dict = get_idc_gcs_to_tcia_api_collection_ID_dict()
-    if not BQ_table_exists(BQ_client, args.bq_project, args.dataset, args.aux_table):
+    if not BQ_table_exists(BQ_client, args.bq_project, args.dataset, args.aux_src_table):
         try:
-            table = create_BQ_table(BQ_client, args.bq_project, args.dataset, args.aux_table, auxilliary_metadata_schema)
+            table = create_BQ_table(BQ_client, args.bq_project, args.dataset, args.aux_src_table, auxilliary_metadata_schema)
         except:
             print("Error creating table auxilliary_metadata: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
                   file=sys.stdout, flush=True)
@@ -166,7 +167,7 @@ def gen_aux_table_no_uuids(storage_client, BQ_client, args):
 
             # Now append the per-collection temp table to auxilliary_metadata table
             src_table = "{}.{}.{}".format(BQ_client.project, args.dataset, args.temp_table)
-            dst_table = "{}.{}.{}".format(BQ_client.project, args.dataset, args.aux_table)
+            dst_table = "{}.{}.{}".format(BQ_client.project, args.dataset, args.aux_src_table)
             result =  copy_BQ_table(BQ_client, src_table, dst_table)
 
             # We now need to append the contents of the temp table to the aux table
@@ -182,14 +183,28 @@ def gen_aux_table(args):
     # Generate the auxilliary_metadata table. It will not yet include crdc uuids
     gen_aux_table_no_uuids(storage_client, BQ_client, args)
 
+    # Now join the auxilliary_metadata table to dicom_metadata to
+    # limit to instances in dicom_metadata
+    aux = "{}.{}.{}".format(args.bq_project, args.dataset, args.aux_src_table)
+    meta = "{}.{}.{}".format(args.bq_project, args.dataset, args.dicom_metadata_table)
+    # add_crdc_uuids(BQ_client, args)
+    with open(args.join_metadata_to_aux_sql_file) as f:
+        sql = f.read().format(aux=aux, meta=meta)
+    result = query_BQ(BQ_client, args.dataset, args.aux_dst_table, sql, 'WRITE_TRUNCATE')
+
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
     parser.add_argument('--collections', default='{}/{}'.format(os.environ['PWD'], '../../lists/idc_mvp_wave_1.txt'),
                         help='File listing collections to add to BQ table, or "all"')
+    parser.add_argument(('--join_metadata_to_aux_sql_file'), default='./sql/join_dicom_metadata_to_aux_metadata.sql')
     parser.add_argument('--bucket_prefix', default='idc-tcia-1-')
     parser.add_argument('--dataset', default='whc_dev', help='BQ dataset name')
-    parser.add_argument('--aux_table', default='idc_tcia_auxilliary_metadata', \
+    parser.add_argument('--dicom_metadata_table', default='idc_tcia_dicom_metadata', \
+                        help='BQ dicom metadata table name')
+    parser.add_argument('--aux_src_table', default='idc_tcia_auxilliary_metadata_no_guids', \
+                        help='BQ auxilliary_metadata table name')
+    parser.add_argument('--aux_dst_table', default='idc_tcia_auxilliary_metadata_no_guids_trimmed', \
                         help='BQ auxilliary_metadata table name')
     parser.add_argument('--temp_table', default='idc_tcia_collection_metadata', \
                         help='Temporary table in which collection metadata is built before appending to auxilliary_metadata')
