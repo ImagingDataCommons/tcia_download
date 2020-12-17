@@ -5,7 +5,7 @@ SELECT
     guids.instance_guid AS instance) AS CRDC_UUIDS
 FROM
   {guids} AS guids
-JOIN
+RIGHT JOIN
   {aux} AS aux
 ON
   guids.SOPInstanceUID = aux.SOPInstanceUID
