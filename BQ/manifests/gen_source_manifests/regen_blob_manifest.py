@@ -1,3 +1,24 @@
+#!/usr/bin/env
+#
+# Copyright 2020, Institute for Systems Biology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Load data in some set of collections (stored in GCS buckets), and having some bucket name prefix, into a DICOM server store.
+# The third party data of some collections is load conditionally. For this purpose, the BQ idc_tcia_third_party_series table
+# is used to identify third party data, and, thus must have been previously generated.
+
 from google.cloud import bigquery
 import argparse
 import json
@@ -32,7 +53,7 @@ if __name__ == '__main__':
                         help="File containing SQL for this query")
     parser.add_argument('--collection', default='nsclc_radiomics', \
                          help='Collection for which to regen blob manifest')
-    parser.add_argument('--manifest_uri', default='gs://indexd_manifests/dcf_input/idc_mvp_wave1_indexd_manifest_v2.tsv'.format(os.environ['PWD']),
+    parser.add_argument('--manifest_uri', default='gs://indexd_manifests/dcf_input/idc_mvp_wave1_indexd_manifest_v3.tsv'.format(os.environ['PWD']),
                         help="TSV file in which to save results")
     parser.add_argument('--dataset', default='idc_tcia_mvp_wave1',
                         help="BQ dataset")
