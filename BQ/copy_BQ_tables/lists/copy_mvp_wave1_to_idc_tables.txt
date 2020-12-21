@@ -1,0 +1,5 @@
+#idc-dev-etl.idc_tcia_mvp_wave1.idc_tcia_analysis_collections_metadata, canceridc-data.idc.analysis_collections_metadata
+idc-dev-etl.idc_tcia_mvp_wave1.idc_tcia_auxilliary_metadata, canceridc-data.idc.auxilliary_metadata
+#idc-dev-etl.idc_tcia_mvp_wave1.idc_tcia_data_collections_metadata, canceridc-data.idc.data_collections_metadata
+#idc-dev-etl.idc_tcia_mvp_wave1.idc_tcia_dicom_metadata, canceridc-data.idc.dicom_metadata
+#idc-dev-etl.idc_tcia_mvp_wave1.idc_tcia_third_party_series, canceridc-data.idc.third_party_series

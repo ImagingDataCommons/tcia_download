@@ -25,13 +25,11 @@ import sys
 import os
 import json
 import time
-from BQ.manifests.crdc_guids_table.schemas.crdc_manifest import crdc_blob_manifests_schema, \
+from BQ.manifests.add_guids_to_aux.schemas.crdc_manifest import crdc_blob_manifests_schema, \
     crdc_study_bundle_manifests_schema, crdc_series_bundle_manifests_schema
-from BQ.manifests.crdc_guids_table.schemas.crdc_guids import crdc_guids_schema
+from BQ.manifests.add_guids_to_aux.schemas.crdc_guids import crdc_guids_schema
 from google.cloud import bigquery, storage
 from utilities.bq_helpers import load_BQ_from_json, delete_BQ_Table, create_BQ_table, load_BQ_from_uri, query_BQ
-from BQ.analysis_collections_table.schemas.analysis_collections_metadata_schema import analysis_collections_metadata_schema
-from utilities.tcia_scrapers import scrape_tcia_analysis_collections_page
 
 
 def load_bundle_manifests(storage_client,BQ_client, args):
@@ -51,7 +49,6 @@ def load_bundle_manifests(storage_client,BQ_client, args):
 
     bucket = storage_client.bucket(args.manifest_bucket)
     all_manifests = list(bucket.list_blobs(prefix='dcf_output'))
-
 
     for manifest in all_manifests:
         if 'bundle' in manifest.name:
@@ -120,13 +117,20 @@ def load_blob_manifests(storage_client, BQ_client, args):
         print("[ERROR] Failed to create ")
         return
 
+    if args.excluded_manifests:
+        with open(args.excluded_manifests) as f:
+            excludes = [manifest.strip() for manifest in f.readlines()]
+    else:
+        excludes = []
+
     bucket = storage_client.bucket(args.manifest_bucket)
     all_manifests = list(bucket.list_blobs(prefix='dcf_output'))
 
     for manifest in all_manifests:
         if not 'bundle' in manifest.name:
-            print("Loading blob manifest {}".format(manifest.name))
-            result = load_BQ_from_uri(BQ_client, args.bqdataset_name, args.temp_blob_manifest_table, manifest.public_url, crdc_blob_manifests_schema)
+             if not manifest.name.split('/')[1] in excludes:
+                print("Loading blob manifest {}".format(manifest.name))
+                result = load_BQ_from_uri(BQ_client, args.bqdataset_name, args.temp_blob_manifest_table, manifest.public_url, crdc_blob_manifests_schema)
     print("{}: Completed blob bundle manifest upload \n".format(time.asctime()))
 
 
@@ -153,9 +157,9 @@ def gen_crdc_guids_table(storage_client, BQ_client, args):
     job = BQ_client.query(query, job_config=job_config)  # Make an API request.
     try:
         result = job.result()
-        result = delete_BQ_Table(BQ_client, args.project, args.bqdataset_name, args.temp_blob_manifest_table)
-        result = delete_BQ_Table(BQ_client, args.project, args.bqdataset_name, args.temp_series_bundle_manifest_table)
-        result = delete_BQ_Table(BQ_client, args.project, args.bqdataset_name, args.temp_study_bundle_manifest_table)
+        # result = delete_BQ_Table(BQ_client, args.project, args.bqdataset_name, args.temp_blob_manifest_table)
+        # result = delete_BQ_Table(BQ_client, args.project, args.bqdataset_name, args.temp_series_bundle_manifest_table)
+        # result = delete_BQ_Table(BQ_client, args.project, args.bqdataset_name, args.temp_study_bundle_manifest_table)
 
     except Exception as e:
         print("[Error] Failed to create crdc_guids table: {}".format(e))
@@ -173,16 +177,16 @@ def join_guids_to_aux_table(args):
     # Note that this will exclude any rows from auxilliary_metadata that
     # are not in crdc_guids. In particular, crdc_guids might not include
     # some 3rd party instances.
-    aux = "{}.{}.{}".format(args.project, args.bqdataset_name, args.aux_table)
+    aux = "{}.{}.{}".format(args.project, args.bqdataset_name, args.aux_src_table)
     guids = "{}.{}.{}".format(args.project, args.bqdataset_name, args.crdc_guids_table)
     dicom_metadata = "{}.{}.{}".format(args.project, args.bqdataset_name, args.dicom_metadata_table)
     # add_crdc_uuids(BQ_client, args)
     with open(args.join_guids_to_aux_sql_file) as f:
         sql = f.read().format(aux=aux, guids=guids)
-    result = query_BQ(BQ_client, args.bqdataset_name, args.aux_table, sql, 'WRITE_TRUNCATE')
+    result = query_BQ(BQ_client, args.bqdataset_name, args.aux_dst_table, sql, 'WRITE_TRUNCATE')
 
 
-    result = delete_BQ_Table(BQ_client, args.project, args.bqdataset_name, args.crdc_guids_table)
+    # result = delete_BQ_Table(BQ_client, args.project, args.bqdataset_name, args.crdc_guids_table)
 
 if __name__ == '__main__':
     parser =argparse.ArgumentParser()
@@ -198,12 +202,16 @@ if __name__ == '__main__':
                          help='Temporary BQ table holding crdc study bundle manifests')
     parser.add_argument('--dicom_metadata_table', default='idc_tcia_dicom_metadata',  \
                          help='DICOM metadata table')
-    parser.add_argument('--aux_table', default='idc_tcia_auxilliary_metadata', \
+    parser.add_argument('--aux_src_table', default='idc_tcia_auxilliary_metadata_no_guids_trimmed', \
+                        help='BQ auxilliary_metadata table name')
+    parser.add_argument('--aux_dst_table', default='idc_tcia_auxilliary_metadata', \
                         help='BQ auxilliary_metadata table name')
     parser.add_argument('--gen_crdc_guids_table_sql_file', default='sql/gen_crdc_guids_table.sql',  \
                          help='SQL for building crdc guids table')
     parser.add_argument('--join_guids_to_aux_sql_file', default='./sql/join_auxilliary_table_to_crdc_guids_table.sql', \
                         help='SQL for joining guids table to aux table')
+    parser.add_argument('--excluded_manifests', default = '',
+                        help='List of manifests to exclude from process')
     parser.add_argument('--region', default='us', help='Dataset region')
     parser.add_argument('--project', default='idc-dev-etl')
 

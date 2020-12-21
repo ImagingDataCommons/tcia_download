@@ -20,7 +20,7 @@
 
 import argparse
 import sys
-from BQ.manifests.crdc_guids_table.gen_crdc_guids import join_guids_to_aux_table
+from BQ.manifests.add_guids_to_aux.gen_crdc_guids import join_guids_to_aux_table
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--manifest_bucket', default='indexd_manifests', \
@@ -35,12 +35,18 @@ parser.add_argument('--temp_study_bundle_manifest_table', default='crdc_study_bu
                     help='Temporary BQ table holding crdc study bundle manifests')
 parser.add_argument('--dicom_metadata_table', default='idc_tcia_dicom_metadata', \
                     help='DICOM metadata table')
-parser.add_argument('--aux_table', default='idc_tcia_auxilliary_metadata', \
+parser.add_argument('--aux_src_table', default='idc_tcia_auxilliary_metadata_no_guids_trimmed', \
+                    help='BQ auxilliary_metadata table name')
+parser.add_argument('--aux_dst_table', default='idc_tcia_auxilliary_metadata', \
                     help='BQ auxilliary_metadata table name')
 parser.add_argument('--gen_crdc_guids_table_sql_file', default='sql/gen_crdc_guids_table.sql', \
                     help='SQL for building crdc guids table')
 parser.add_argument('--join_guids_to_aux_sql_file', default='./sql/join_auxilliary_table_to_crdc_guids_table.sql', \
                     help='SQL for joining guids table to aux table')
+# parser.add_argument('--join_guids_to_aux_sql_file', default='./sql/join_auxilliary_table_to_crdc_guids_table_wave1.sql', \
+#                     help='SQL for joining guids table to aux table')
+parser.add_argument('--excluded_manifests', default='./lists/excluded_manifests.txt',
+                    help='List of manifests to exclude from process')
 parser.add_argument('--region', default='us', help='Dataset region')
 parser.add_argument('--project', default='idc-dev-etl')
 

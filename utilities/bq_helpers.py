@@ -161,12 +161,13 @@ def load_BQ_from_uri(client, dataset, table, uri, schema, delimiter='\t', skip=1
     except:
         print("Error loading table: {},{},{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
               file=sys.stdout, flush=True)
+        raise
 
 
-# load a file at some uri. Assumes a csv or tsv (default).
-def query_BQ(client, dataset, table, sql, write_disposition = 'WRITE_APPEND' ):
+# Perform a query and write results to dst_dataset.dst_table
+def query_BQ(client, dst_dataset, dst_table, sql, write_disposition='WRITE_APPEND'):
 
-    table_id = "{}.{}.{}".format(client.project, dataset, table)
+    table_id = "{}.{}.{}".format(client.project, dst_dataset, dst_table)
 
     job_config = bigquery.QueryJobConfig(destination=table_id)
     job_config.write_disposition = write_disposition
@@ -179,3 +180,36 @@ def query_BQ(client, dataset, table, sql, write_disposition = 'WRITE_APPEND' ):
 
     result = job.result()
     return result
+
+# BQ to BQ copy. src_table and dst table are fully qualifies `project.dataset.table`
+def copy_BQ_table(client, src_table, dst_table, create_disposition='CREATE_IF_NEEDED',
+                  write_disposition = 'WRITE_APPEND'):
+    config = bigquery.CopyJobConfig()
+    config.create_disposition = create_disposition
+    config.write_disposition = write_disposition
+
+    try:
+        job = client.copy_table(src_table, dst_table, job_config=config)
+        while not job.result().state == 'DONE':
+            print('Waiting for job done. Status: {}'.format(job.state))
+            time.sleep(15)
+        result = job.result()
+    except:
+        print("Error loading copying table: {}.{}.{}".format(sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]),
+              file=sys.stdout, flush=True)
+        raise
+
+# Export table contents to GCS
+def export_BQ_to_GCS(client, src_dataset, src_table, dst_uri, field_delimiter="\t", destination_format="CSV"):
+    dataset_ref = client.dataset(src_dataset, project=client.project)
+    table_ref = dataset_ref.table(src_table)
+    job_config = bigquery.job.ExtractJobConfig()
+    job_config.field_delimiter = field_delimiter
+    job_config.destination_format = destination_format
+
+    extract_job = client.extract_table(
+        table_ref,
+        dst_uri,
+        job_config = job_config)
+    results = extract_job.result()  # Waits for job to complete
+    return results

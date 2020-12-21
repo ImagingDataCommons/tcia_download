@@ -18,7 +18,9 @@ from google.cloud import bigquery
 import argparse
 import sys
 
-def set_BQ_policy(args):
+# Set the BQ dataset sharing policy to READER for allAuthenticatedUsers
+
+def set_BQ_dataset_policy(args):
     # Construct a BigQuery client object.
     client = bigquery.Client()
 
@@ -49,4 +51,4 @@ if __name__ == '__main__':
                         help='Tables (source/destination) to copy')
     args = parser.parse_args()
     print("{}".format(args), file=sys.stdout)
-    set_BQ_policy(args)
+    set_BQ_dataset_policy(args)
