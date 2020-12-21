@@ -39,6 +39,6 @@ def main(task_file_name):
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', default='{}/tasks.new.tsv'.format(os.environ['PWD']))
-    args = parser.parse_args()
-    print(args)
-    main(args.file)
+    argz = parser.parse_args()
+    print(argz)
+    main(argz.file)
