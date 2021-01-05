@@ -43,7 +43,6 @@ def regen_blob_manifest(args):
     results = query_BQ(BQ_client, args.dataset, args.temp_table, sql, \
                        write_disposition='WRITE_TRUNCATE')
 
-
     results = export_BQ_to_GCS(BQ_client, args.dataset, args.temp_table, args.manifest_uri)
 
 

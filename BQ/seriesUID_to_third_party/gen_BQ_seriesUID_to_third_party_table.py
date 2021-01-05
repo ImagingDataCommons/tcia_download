@@ -22,8 +22,8 @@ import json
 import time
 from google.cloud import bigquery
 from utilities.bq_helpers import BQ_table_exists, create_BQ_table, delete_BQ_Table, load_BQ_from_json
-from BQ.third_party_series_file.schemas.third_party_schema import third_party_schema
-from BQ.third_party_series_file.identify_third_party_series import id_3rd_party_series
+from BQ.identify_third_party_series_file.schemas.third_party_schema import third_party_schema
+from BQ.identify_third_party_series_file.identify_third_party_series import id_3rd_party_series
 
 # Create a BQ table of (SeriesInstanceUID, AnalysisDOI) pairs
 

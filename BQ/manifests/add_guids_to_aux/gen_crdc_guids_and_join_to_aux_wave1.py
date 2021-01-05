@@ -20,7 +20,7 @@
 
 import argparse
 import sys
-from BQ.manifests.add_guids_to_aux.gen_crdc_guids import join_guids_to_aux_table
+from BQ.manifests.add_guids_to_aux.gen_crdc_guids_and_join_to_aux import join_guids_to_aux_table
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--manifest_bucket', default='indexd_manifests', \
