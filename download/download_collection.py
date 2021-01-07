@@ -109,9 +109,9 @@ if __name__ == "__main__":
 
     parser =argparse.ArgumentParser()
     parser.add_argument('--collection','-c', default='TCGA-READ', help='Collection name as returned by TCIA /query/getCollectionValues API')
-    parser.add_argument('--processes','-p', type=int, default=8, help='Number of worker processes')
+    parser.add_argument('--processes','-p', type=int, default=1, help='Number of worker processes')
     parser.add_argument('--project', default='idc-dev-etl', help='Project in which to execute')
-    parser.add_argument('--dst_prefix', default='idc-tcia-2-', help='Bucket prefix')
+    parser.add_argument('--dst_prefix', default='idc-tcia-3-', help='Bucket prefix')
     args = parser.parse_args()
     logging.info("%s", args)
 

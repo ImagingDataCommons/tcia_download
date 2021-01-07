@@ -262,8 +262,7 @@ def copy_series(project, study, series, image_count, target_bucket_name, referen
 # Function run by worker processes
 #
 def worker(input, output, project, validate):
-    logging.debug('worker args, input: %s, output: %s, project: %s, validate: %s', input, output, project, \
-                  validate)
+    logging.debug('worker args, input: %s, output: %s, project: %s, validate: %s', input, output, project, validate)
     storage_client = storage.Client(project=project)
     for args in iter(input.get, 'STOP'):
         result = copy_series(project, *args, storage_client, validate)
