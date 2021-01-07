@@ -26,13 +26,6 @@ import backoff
 def get_url(url):  # , headers):
     return requests.get(url)  # , headers=headers)
 
-
-@backoff.on_exception(backoff.expo,
-                      requests.exceptions.RequestException,
-                      max_time=60)
-def get_url(url):  # , headers):
-    return requests.get(url)  # , headers=headers)
-
 def scrape_tcia_analysis_collections_page():
     URL = 'https://www.cancerimagingarchive.net/tcia-analysis-results/'
     page = get_url(URL)
