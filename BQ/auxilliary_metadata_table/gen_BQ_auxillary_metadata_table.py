@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+# This script generates a partially complete auxilliary metadata table in BQ. The table will not
+# yet have study, series and instance GUIDs. Those are added by the  gen_crdc_guids_and_join_to_aux.py
+# script.
+
 import argparse
 import sys
 import os
@@ -26,6 +30,8 @@ from utilities.bq_helpers import BQ_table_exists, create_BQ_table, load_BQ_from_
     query_BQ
 from BQ.auxilliary_metadata_table.schemas.auxilliary_metadata import auxilliary_metadata_schema
 from utilities.tcia_helpers import get_TCIA_collections
+
+
 
 # Create a dictionary to map from idc collection to tcia API collection name
 def get_idc_gcs_to_tcia_api_collection_ID_dict():
