@@ -30,6 +30,7 @@ from multiprocessing import Process, Queue
 from queue import Empty
 import logging
 
+
 # sys.path.append(os.environ['CLONE_TCIA'])
 from utilities.tcia_helpers import TCIA_API_request_to_file, TCIA_API_request
 
@@ -380,6 +381,8 @@ def copy_collection(tcia_collection_id, num_processes, storage_client, project, 
                     process.terminate()
                     process.join()
                 return(compressed, uncompressed, [])
+
+        shutil.rmtree('{}'.format(DICOM))
         return(compressed, uncompressed, series_statistics)
     except:
         logging.error("\tUnexpected error in copy_collection. Terminating: %s,%s,%s",
