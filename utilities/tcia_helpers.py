@@ -23,8 +23,8 @@ from io import BytesIO, StringIO
 import requests
 import backoff
 
-# TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
-TCIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
+TCIA_URL = 'https://services.cancerimagingarchive.net/services/v4/TCIA/query'
+# TCIA_URL = 'https://services.cancerimagingarchive.net/nbia-api/services/v1'
 @backoff.on_exception(backoff.expo,
                       requests.exceptions.RequestException,
                       max_tries=3)

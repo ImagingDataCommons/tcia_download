@@ -22,6 +22,7 @@ import time
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
 
+# Return the StudyInstanceUID portion of the name of each blob in a bucket
 def get_studies(storage_client, bucket_name, prefix='dicom/'):
     studies = []
     iterator = storage_client.list_blobs(bucket_name, prefix=prefix, delimiter='/')
@@ -29,7 +30,7 @@ def get_studies(storage_client, bucket_name, prefix='dicom/'):
         studies.extend(page.prefixes)
     return studies
 
-
+# Return the SeriesInstanceUID portion of the name of each blob in a bucket
 def get_series(storage_client, bucket_name):
     studies = get_studies(storage_client, bucket_name)
     series = []

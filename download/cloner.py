@@ -275,8 +275,9 @@ def copy_collection(tcia_collection_id, num_processes, storage_client, project, 
                   tcia_collection_id, num_processes, storage_client, project)
 
     processes = []
-    collection_name = tcia_collection_id.replace(' ', '_')
-    target_bucket_name= '{}{}'.format(dst_prefix, collection_name.lower().replace('_','-'))
+    # collection_name = tcia_collection_id.replace(' ', '_')
+    collection_name = tcia_collection_id
+    target_bucket_name= '{}{}'.format(dst_prefix, collection_name.lower().replace('_','-').replace(' ','-'))
     if REF_PREFIX != "":
         reference_bucket_name = target_bucket_name.replace(dst_prefix, REF_PREFIX)
     else:

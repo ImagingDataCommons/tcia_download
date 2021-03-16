@@ -27,9 +27,9 @@ from time import sleep
 from googleapiclient.errors import HttpError
 from google.cloud import storage
 from google.cloud import bigquery
-from helpers.dicom_helpers import get_dataset, get_dataset_operation, create_dataset, get_dicom_store, create_dicom_store, import_dicom_instance
-from helpers.gcs_helpers import get_series
-from helpers.dicomweb_helpers import dicomweb_delete_series
+from utilities.dicom_helpers import get_dataset, get_dataset_operation, create_dataset, get_dicom_store, create_dicom_store, import_dicom_instance
+from utilities.gcs_helpers import get_series
+from utilities.dicomweb_helpers import dicomweb_delete_series
 
 _BASE_URL = "https://healthcare.googleapis.com/v1"
 
@@ -105,6 +105,8 @@ def import_full_collection(args, bucket):
 
 
 def import_original_collection(client, args, bucket, third_party_series):
+    # Query GCS for a list of distinct series names, (dicom/<StudyInstanceUID>/<SeriesInstanceUID>/)
+    # in bucket
     all_series = get_series(client, bucket)
     # We start by importing the entire collection
     result = import_full_collection(args, bucket)
@@ -113,7 +115,8 @@ def import_original_collection(client, args, bucket, third_party_series):
     count = 0
     print(" Deleting third party series")
     for series in all_series:
-        # If it's a 3rd party series, delete it
+        # Extract the SeriesInstanceUID, and if it's in third_party_series
+        # delete it from DICOM store.
         if  series.split('/')[-2] in third_party_series:
             study_uid = series.split('/')[-3]
             series_uid = series.split('/')[-2]

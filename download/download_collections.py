@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+#### This script has not been updated to run locally ####
 # This is the main routine for downloading DICOM data from TCIA.
 # It calls dsub to launch a VM on which an instance of clone_collection.py is executed.
 # Collections are in buckets under the project specified by the --project param. Buckets are name, starting with

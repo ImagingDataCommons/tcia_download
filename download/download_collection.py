@@ -49,8 +49,10 @@ def main(args):
 
     storage_client = storage.Client(project=project)
 
-    collection_name = tcia_collection_id.replace(' ','_')
-    target_bucket_name = '{}{}'.format(dst_prefix, collection_name.lower().replace('_','-'))
+    # collection_name = tcia_collection_id.replace(' ','_')
+    # target_bucket_name = '{}{}'.format(dst_prefix, collection_name.lower().replace('_','-'))
+    collection_name = tcia_collection_id
+    target_bucket_name = '{}{}'.format(dst_prefix, collection_name.lower().replace(' ', '-').replace('_','-'))
 
     bucket_url = "gs://{}".format(target_bucket_name)
 
@@ -105,13 +107,13 @@ def main(args):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(filename='{}/logs/log.log'.format(os.environ['PWD']), filemode='w', level=logging.INFO)
+    logging.basicConfig(filename='{}/logs/rider-breast-mri-nbia.log'.format(os.environ['PWD']), filemode='w', level=logging.INFO)
 
     parser =argparse.ArgumentParser()
-    parser.add_argument('--collection','-c', default='TCGA-READ', help='Collection name as returned by TCIA /query/getCollectionValues API')
-    parser.add_argument('--processes','-p', type=int, default=1, help='Number of worker processes')
+    parser.add_argument('--collection','-c', default='RIDER Breast MRI', help='Collection name as returned by TCIA /query/getCollectionValues API')
+    parser.add_argument('--processes','-p', type=int, default=0, help='Number of worker processes')
     parser.add_argument('--project', default='idc-dev-etl', help='Project in which to execute')
-    parser.add_argument('--dst_prefix', default='idc-tcia-3-', help='Bucket prefix')
+    parser.add_argument('--dst_prefix', default='nbia-', help='Bucket prefix')
     args = parser.parse_args()
     logging.info("%s", args)
 
