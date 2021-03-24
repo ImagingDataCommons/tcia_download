@@ -30,6 +30,7 @@ from multiprocessing import Process, Queue
 from queue import Empty
 import logging
 
+
 # sys.path.append(os.environ['CLONE_TCIA'])
 from utilities.tcia_helpers import TCIA_API_request_to_file, TCIA_API_request
 
@@ -274,8 +275,9 @@ def copy_collection(tcia_collection_id, num_processes, storage_client, project, 
                   tcia_collection_id, num_processes, storage_client, project)
 
     processes = []
-    collection_name = tcia_collection_id.replace(' ', '_')
-    target_bucket_name= '{}{}'.format(dst_prefix, collection_name.lower().replace('_','-'))
+    # collection_name = tcia_collection_id.replace(' ', '_')
+    collection_name = tcia_collection_id
+    target_bucket_name= '{}{}'.format(dst_prefix, collection_name.lower().replace('_','-').replace(' ','-'))
     if REF_PREFIX != "":
         reference_bucket_name = target_bucket_name.replace(dst_prefix, REF_PREFIX)
     else:
@@ -380,6 +382,8 @@ def copy_collection(tcia_collection_id, num_processes, storage_client, project, 
                     process.terminate()
                     process.join()
                 return(compressed, uncompressed, [])
+
+        shutil.rmtree('{}'.format(DICOM))
         return(compressed, uncompressed, series_statistics)
     except:
         logging.error("\tUnexpected error in copy_collection. Terminating: %s,%s,%s",

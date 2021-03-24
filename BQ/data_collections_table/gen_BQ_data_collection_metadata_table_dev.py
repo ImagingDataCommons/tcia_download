@@ -22,7 +22,7 @@ import sys
 from BQ.data_collections_table.gen_BQ_data_collection_metadata_table import gen_collections_table
 
 parser =argparse.ArgumentParser()
-parser.add_argument('--file', default='{}/{}'.format(os.environ['PWD'], 'BQ/lists/collection_ids_dev.json'),
+parser.add_argument('--file', default='{}/{}'.format(os.environ['PWD'], '../collection_ids_file/lists/collection_ids_dev.json'),
                     help='Table to translate between collection IDs ')
 parser.add_argument('--bqdataset_name', default='idc_tcia_dev', help='BQ dataset name')
 parser.add_argument('--bqtable_name', default='idc_tcia_data_collections_metadata', help='BQ table name')
